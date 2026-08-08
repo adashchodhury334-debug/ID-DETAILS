@@ -1,0 +1,16 @@
+Delivery Tracker — build-ready Android project
+
+Features:
+- Order ID
+- Tracking ID
+- Pending / Delivered / Failed
+- Dashboard
+- Performance
+- Search / Edit / Delete
+- No login
+- No settings
+- No customer name, ID, address, or phone
+- Offline local storage
+
+Package: com.deliverytracker.app
+Version: 1.0
