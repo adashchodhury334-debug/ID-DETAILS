@@ -21,8 +21,7 @@ public class MainActivity extends Activity {
         
         webView.setWebViewClient(new WebViewClient());
         
-        // Instant Live Data URL (No Publish Caching Delay)
-        String csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNHE2l_d6VIDLvWCB7nL8DBx48IpCYbC_lLMu-4JrygEPW92zZRFwXf_UArMx_iQURYIhyEvhWyHfJ/gviz/tq?tqx=out:csv";
+        String csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNHE2l_d6VIDLvWCB7nL8DBx48IpCYbC_lLMu-4JrygEPW92zZRFwXf_UArMx_iQURYIhyEvhWyHfJ/pub?output=csv";
         
         String htmlData = "<!DOCTYPE html><html lang='hi'><head><meta charset='UTF-8'>" +
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
@@ -42,33 +41,38 @@ public class MainActivity extends Activity {
             ".btn-copy { background: #333; color: #fff; border: 1px solid #555; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }" +
             ".btn-copy:active { background: #4caf50; border-color: #4caf50; }" +
             ".no-result { text-align: center; color: #888; padding: 20px 0; font-size: 14px; }" +
+            ".status-info { text-align: center; font-size: 12px; color: #4caf50; margin-bottom: 8px; font-weight: bold; }" +
             "</style></head><body>" +
             "<h1>Delivery Tracker</h1>" +
             "<button class='btn-refresh' onclick='fetchOrders()'>🔄 Refresh Data</button>" +
             "<div class='card'>" +
             "<div class='card-title'>🔍 Tracking ID (Full or Last 4-5 Digits)</div>" +
-            "<input type='text' id='search-input' placeholder='Type digits e.g. 1999...' oninput='renderOrders()'>" +
+            "<input type='text' id='search-input' placeholder='Type digits e.g. 43199...' oninput='renderOrders()'>" +
             "</div>" +
             "<div class='card'>" +
             "<div class='card-title'>📦 Order Details</div>" +
+            "<div id='status-text' class='status-info'></div>" +
             "<div id='orders-list'>Loading data...</div>" +
             "</div>" +
             "<script>" +
             "let orders = [];" +
             "function fetchOrders() {" +
             "document.getElementById('orders-list').innerHTML = '<div class=\"no-result\">Fetching latest data...</div>';" +
+            "document.getElementById('status-text').innerText = '';" +
             "fetch('" + csvUrl + "')" +
             ".then(res => res.text())" +
             ".then(csvText => { parseCSV(csvText); })" +
-            ".catch(err => { document.getElementById('orders-list').innerHTML = '<div class=\"no-result\">Error loading data. Try Refreshing.</div>'; });" +
+            ".catch(err => { document.getElementById('orders-list').innerHTML = '<div class=\"no-result\">Error loading data. Check Internet.</div>'; });" +
             "}" +
             "function parseCSV(text) {" +
             "let lines = text.split('\\n'); orders = [];" +
             "for(let i = 1; i < lines.length; i++) {" +
-            "if(!lines[i].trim()) continue;" +
-            "let cols = lines[i].split(',').map(c => c.replace(/\"/g, '').trim());" +
+            "let line = lines[i].trim();" +
+            "if(!line) continue;" +
+            "let cols = line.split(',').map(c => c.replace(/\"/g, '').trim());" +
             "if(cols[0] || cols[1]) { orders.push({ trackingId: cols[0] || '', orderId: cols[1] || '' }); }" +
             "}" +
+            "document.getElementById('status-text').innerText = '✅ Total Orders Loaded: ' + orders.length;" +
             "renderOrders();" +
             "}" +
             "function copyToClipboard(text) {" +
@@ -85,7 +89,8 @@ public class MainActivity extends Activity {
             "}" +
             "let count = 0;" +
             "orders.forEach((item) => {" +
-            "if (item.trackingId.toLowerCase().includes(search)) {" +
+            "let track = item.trackingId.toLowerCase();" +
+            "if (track.includes(search)) {" +
             "count++;" +
             "const div = document.createElement('div'); div.className = 'order-item';" +
             "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.trackingId}</div><div class='order-id'>Order ID: ${item.orderId}</div></div><button class='btn-copy' onclick='copyToClipboard(\"${item.orderId}\")'>Copy</button>`;" +
