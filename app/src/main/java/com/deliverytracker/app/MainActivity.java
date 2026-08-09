@@ -21,7 +21,8 @@ public class MainActivity extends Activity {
         
         webView.setWebViewClient(new WebViewClient());
         
-        String csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNHE2l_d6VIDLvWCB7nL8DBx48IpCYbC_lLMu-4JrygEPW92zZRFwXf_UArMx_iQURYIhyEvhWyHfJ/pub?output=csv";
+        // Instant Live Data URL (No Publish Caching Delay)
+        String csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNHE2l_d6VIDLvWCB7nL8DBx48IpCYbC_lLMu-4JrygEPW92zZRFwXf_UArMx_iQURYIhyEvhWyHfJ/gviz/tq?tqx=out:csv";
         
         String htmlData = "<!DOCTYPE html><html lang='hi'><head><meta charset='UTF-8'>" +
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
