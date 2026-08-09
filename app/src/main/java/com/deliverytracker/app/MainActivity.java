@@ -1,23 +1,34 @@
 package com.deliverytracker.app;
 
 import android.app.Activity;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
+    
+    private WebView webView;
+    private DatabaseHelper dbHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        WebView webView = new WebView(this);
-        WebSettings settings = webView.getSettings();
+        dbHelper = new DatabaseHelper(this);
+        webView = new WebView(this);
         
+        WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
-        settings.setDatabaseEnabled(true);
+        
+        webView.addJavascriptInterface(new WebAppInterface(), "AndroidNative");
         
         String htmlData = "<!DOCTYPE html><html lang='hi'><head><meta charset='UTF-8'>" +
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
@@ -31,7 +42,6 @@ public class MainActivity extends Activity {
             ".card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #fff; display: flex; justify-content: space-between; align-items: center; }" +
             "textarea { width: 100%; height: 110px; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 13px; outline: none; margin-bottom: 10px; resize: none; }" +
             "input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 15px; outline: none; margin-bottom: 10px; }" +
-            "input:focus, textarea:focus { border-color: #4caf50; box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }" +
             ".btn-add { background: #4caf50; color: #fff; border: none; font-weight: bold; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 14px; }" +
             ".btn-danger { background: #c62828; color: #fff; border: none; font-weight: bold; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 13px; margin-top: 10px; }" +
             ".order-item { background: #252525; padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #4caf50; display: flex; justify-content: space-between; align-items: center; }" +
@@ -65,7 +75,7 @@ public class MainActivity extends Activity {
 
             "<div class='card'>" +
             "<div class='card-title'>🔍 Search Order</div>" +
-            "<input type='text' id='search-input' placeholder='Type last 4-5 digits...' oninput='renderOrders()' style='margin-bottom:0;'>" +
+            "<input type='text' id='search-input' placeholder='Type last 4-5 digits...' oninput='searchOrders()' style='margin-bottom:0;'>" +
             "</div>" +
 
             "<div class='card'>" +
@@ -75,27 +85,20 @@ public class MainActivity extends Activity {
             "</div>" +
 
             "<script>" +
-            "let orders = [];" +
             "let isAdmin = false;" +
             "const ADMIN_PIN = '7602';" +
 
-            "function updateAdminUI() {" +
-            "if(isAdmin) {" +
-            "document.getElementById('pass-box').style.display = 'none';" +
-            "document.getElementById('admin-panel').style.display = 'block';" +
-            "document.getElementById('lock-btn').innerText = '🔓 Logout Admin';" +
-            "} else {" +
-            "document.getElementById('pass-box').style.display = 'none';" +
-            "document.getElementById('admin-panel').style.display = 'none';" +
-            "document.getElementById('lock-btn').innerText = '🔒 Admin Login';" +
-            "}" +
+            "function updateStatus() {" +
+            "let total = AndroidNative.getTotalCount();" +
+            "document.getElementById('status-text').innerText = '✅ Total Active Orders: ' + total;" +
             "}" +
 
             "function handleAdminClick() {" +
             "if(isAdmin) {" +
             "isAdmin = false;" +
-            "updateAdminUI();" +
-            "renderOrders();" +
+            "document.getElementById('admin-panel').style.display = 'none';" +
+            "document.getElementById('lock-btn').innerText = '🔒 Admin Login';" +
+            "searchOrders();" +
             "} else {" +
             "let box = document.getElementById('pass-box');" +
             "box.style.display = box.style.display === 'block' ? 'none' : 'block';" +
@@ -107,59 +110,49 @@ public class MainActivity extends Activity {
             "if(inputPin === ADMIN_PIN) {" +
             "isAdmin = true;" +
             "document.getElementById('pin-input').value = '';" +
-            "updateAdminUI();" +
-            "renderOrders();" +
+            "document.getElementById('pass-box').style.display = 'none';" +
+            "document.getElementById('admin-panel').style.display = 'block';" +
+            "document.getElementById('lock-btn').innerText = '🔓 Logout Admin';" +
+            "searchOrders();" +
             "alert('Admin Mode Activated!');" +
-            "} else {" +
-            "alert('Wrong PIN!');" +
-            "}" +
-            "}" +
-
-            "function loadSavedOrders() {" +
-            "let saved = localStorage.getItem('local_orders');" +
-            "if(saved) { try { orders = JSON.parse(saved); } catch(e){ orders = []; } }" +
-            "else { orders = []; }" +
-            "document.getElementById('status-text').innerText = '✅ Total Active Orders: ' + orders.length;" +
-            "updateAdminUI();" +
-            "renderOrders();" +
+            "} else { alert('Wrong PIN!'); }" +
             "}" +
 
             "function bulkImport() {" +
             "let rawText = document.getElementById('bulk-input').value.trim();" +
             "if(!rawText) { alert('पेस्ट बॉक्स खाली है!'); return; }" +
             "let lines = rawText.split(/\\r?\\n/);" +
-            "let addedCount = 0;" +
+            "let items = [];" +
             "for(let i = 0; i < lines.length; i++) {" +
             "let line = lines[i].trim();" +
             "if(!line) continue;" +
             "let parts = line.split(/[\\t,]/).map(p => p.trim());" +
             "if(parts.length >= 2 && parts[0] && parts[1]) {" +
             "if(!parts[0].toUpperCase().includes('TRACKING')) {" +
-            "orders.push({ trackingId: parts[0], orderId: parts[1] });" +
-            "addedCount++;" +
+            "items.push({ t: parts[0], o: parts[1] });" +
             "}" +
             "}" +
             "}" +
-            "localStorage.setItem('local_orders', JSON.stringify(orders));" +
+            "let added = AndroidNative.insertBulk(JSON.stringify(items));" +
             "document.getElementById('bulk-input').value = '';" +
-            "alert('सफलतापूर्वक ' + addedCount + ' ऑर्डर्स इंपोर्ट हो गए!');" +
-            "loadSavedOrders();" +
+            "alert('सफलतापूर्वक ' + added + ' ऑर्डर्स सेव हो गए!');" +
+            "updateStatus();" +
+            "searchOrders();" +
             "}" +
 
             "function clearAllOrders() {" +
             "if(confirm('क्या आप पूरा डेटा डिलीट करना चाहते हैं?')) {" +
-            "orders = [];" +
-            "localStorage.removeItem('local_orders');" +
-            "localStorage.clear();" +
-            "loadSavedOrders();" +
+            "AndroidNative.deleteAll();" +
+            "updateStatus();" +
+            "searchOrders();" +
             "alert('सारा डेटा डिलीट हो गया है!');" +
             "}" +
             "}" +
 
-            "function deleteOrder(index) {" +
-            "orders.splice(index, 1);" +
-            "localStorage.setItem('local_orders', JSON.stringify(orders));" +
-            "loadSavedOrders();" +
+            "function deleteSingle(id) {" +
+            "AndroidNative.deleteOrder(String(id));" +
+            "updateStatus();" +
+            "searchOrders();" +
             "}" +
 
             "function copyToClipboard(text) {" +
@@ -167,38 +160,133 @@ public class MainActivity extends Activity {
             "alert('Order ID Copied: ' + text);" +
             "}" +
 
-            "function renderOrders() {" +
+            "function searchOrders() {" +
             "const list = document.getElementById('orders-list');" +
-            "const search = document.getElementById('search-input').value.trim().toLowerCase();" +
+            "const search = document.getElementById('search-input').value.trim();" +
             "list.innerHTML = '';" +
-
             "if(search === '') {" +
             "list.innerHTML = '<div class=\"no-result\">सर्च करने के लिए लास्ट 4-5 डिजिट डालें</div>';" +
             "return;" +
             "}" +
-
-            "let count = 0;" +
-            "for(let idx = 0; idx < orders.length; idx++) {" +
-            "let item = orders[idx];" +
-            "let track = String(item.trackingId).toLowerCase();" +
-            "let order = String(item.orderId).toLowerCase();" +
-            "if (track.includes(search) || order.includes(search)) {" +
-            "count++;" +
+            "let results = JSON.parse(AndroidNative.search(search));" +
+            "if(results.length === 0) {" +
+            "list.innerHTML = '<div class=\"no-result\">❌ No matching Tracking ID found</div>';" +
+            "return;" +
+            "}" +
+            "results.forEach(item => {" +
             "const div = document.createElement('div'); div.className = 'order-item';" +
-            "let deleteBtnHtml = isAdmin ? `<button class='btn-delete' onclick='deleteOrder(${idx})'>🗑️</button>` : '';" +
-            "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.trackingId}</div><div class='order-id'>Order ID: ${item.orderId}</div></div><div class='action-btns'><button class='btn-copy' onclick='copyToClipboard(\"${item.orderId}\")'>Copy</button>${deleteBtnHtml}</div>`;" +
+            "let delBtn = isAdmin ? `<button class='btn-delete' onclick='deleteSingle(\"${item.id}\")'>🗑️</button>` : '';" +
+            "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.t}</div><div class='order-id'>Order ID: ${item.o}</div></div><div class='action-btns'><button class='btn-copy' onclick='copyToClipboard(\"${item.o}\")'>Copy</button>${delBtn}</div>`;" +
             "list.appendChild(div);" +
-            "if(count >= 20) break;" +
-            "}" +
-            "}" +
-            "if(count === 0) list.innerHTML = '<div class=\"no-result\">❌ No matching Tracking ID found</div>';" +
+            "});" +
             "}" +
 
-            "loadSavedOrders();" +
+            "updateStatus();" +
             "</script></body></html>";
 
-        // Fixed Local Asset Domain to maintain persistent storage across app restarts
-        webView.loadDataWithBaseURL("file:///android_asset/", htmlData, "text/html", "UTF-8", null);
+        webView.loadDataWithBaseURL(null, htmlData, "text/html", "UTF-8", null);
         setContentView(webView);
+    }
+
+    // Android Native SQLite Interface
+    public class WebAppInterface {
+        
+        @JavascriptInterface
+        public int insertBulk(String jsonStr) {
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            db.beginTransaction();
+            int count = 0;
+            try {
+                JSONArray arr = new JSONArray(jsonStr);
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject obj = arr.getJSONObject(i);
+                    ContentValues cv = new ContentValues();
+                    cv.put("tracking_id", obj.getString("t"));
+                    cv.put("order_id", obj.getString("o"));
+                    db.insert("orders", null, cv);
+                    count++;
+                }
+                db.setTransactionSuccessful();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                db.endTransaction();
+            }
+            return count;
+        }
+
+        @JavascriptInterface
+        public String search(String query) {
+            SQLiteDatabase db = dbHelper.getReadableDatabase();
+            JSONArray arr = new JSONArray();
+            Cursor cursor = db.rawQuery("SELECT id, tracking_id, order_id FROM orders WHERE tracking_id LIKE ? OR order_id LIKE ? LIMIT 20", 
+                    new String[]{"%" + query + "%", "%" + query + "%"});
+            try {
+                if (cursor.moveToFirst()) {
+                    do {
+                        JSONObject obj = new JSONObject();
+                        obj.put("id", cursor.getInt(0));
+                        obj.put("t", cursor.getString(1));
+                        obj.put("o", cursor.getString(2));
+                        arr.put(obj);
+                    } while (cursor.moveToNext());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                cursor.close();
+            }
+            return arr.toString();
+        }
+
+        @JavascriptInterface
+        public void deleteOrder(String idStr) {
+            try {
+                int id = Integer.parseInt(idStr);
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                db.delete("orders", "id = ?", new String[]{String.valueOf(id)});
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        @JavascriptInterface
+        public void deleteAll() {
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            db.delete("orders", null, null);
+        }
+
+        @JavascriptInterface
+        public int getTotalCount() {
+            SQLiteDatabase db = dbHelper.getReadableDatabase();
+            Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM orders", null);
+            int count = 0;
+            if (cursor.moveToFirst()) {
+                count = cursor.getInt(0);
+            }
+            cursor.close();
+            return count;
+        }
+    }
+
+    // SQLite Database Class
+    private static class DatabaseHelper extends SQLiteOpenHelper {
+        private static final String DATABASE_NAME = "DeliveryTracker.db";
+        private static final int DATABASE_VERSION = 1;
+
+        public DatabaseHelper(Activity context) {
+            super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        }
+
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+            db.execSQL("CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, tracking_id TEXT, order_id TEXT);");
+        }
+
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            db.execSQL("DROP TABLE IF EXISTS orders");
+            onCreate(db);
+        }
     }
 }
