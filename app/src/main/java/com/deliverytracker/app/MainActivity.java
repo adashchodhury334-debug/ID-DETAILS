@@ -47,7 +47,7 @@ public class MainActivity extends Activity {
             "<button class='btn-refresh' onclick='fetchOrders()'>🔄 Refresh Data</button>" +
             "<div class='card'>" +
             "<div class='card-title'>🔍 Tracking ID (Full or Last 4-5 Digits)</div>" +
-            "<input type='text' id='search-input' placeholder='Type digits e.g. 43199...' oninput='renderOrders()'>" +
+            "<input type='text' id='search-input' placeholder='Type digits e.g. 8907...' oninput='renderOrders()'>" +
             "</div>" +
             "<div class='card'>" +
             "<div class='card-title'>📦 Order Details</div>" +
@@ -65,12 +65,15 @@ public class MainActivity extends Activity {
             ".catch(err => { document.getElementById('orders-list').innerHTML = '<div class=\"no-result\">Error loading data. Check Internet.</div>'; });" +
             "}" +
             "function parseCSV(text) {" +
-            "let lines = text.split('\\n'); orders = [];" +
-            "for(let i = 1; i < lines.length; i++) {" +
+            "let lines = text.split(/\\r?\\n/);" +
+            "orders = [];" +
+            "for(let i = 0; i < lines.length; i++) {" +
             "let line = lines[i].trim();" +
             "if(!line) continue;" +
             "let cols = line.split(',').map(c => c.replace(/\"/g, '').trim());" +
-            "if(cols[0] || cols[1]) { orders.push({ trackingId: cols[0] || '', orderId: cols[1] || '' }); }" +
+            "if(cols.length >= 2 && cols[0] !== '' && !cols[0].toUpperCase().includes('TRACKING ID')) {" +
+            "orders.push({ trackingId: cols[0], orderId: cols[1] || cols[0] });" +
+            "}" +
             "}" +
             "document.getElementById('status-text').innerText = '✅ Total Orders Loaded: ' + orders.length;" +
             "renderOrders();" +
