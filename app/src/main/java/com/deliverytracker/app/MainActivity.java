@@ -14,17 +14,14 @@ public class MainActivity extends AppCompatActivity {
         WebView webView = new WebView(this);
         WebSettings settings = webView.getSettings();
         
-        // इंटरनेट से डेटा लोड करने की permissions ऑन कर रहे हैं
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        settings.setAllowFileAccessFromFileURLs(true);
-        settings.setAllowUniversalAccessFromFileURLs(true);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
         
         webView.setWebViewClient(new WebViewClient());
         
-        String sheetPublishedId = "2PACX-1vTNHE2l_d6VIDLvWCB7nL8DBx48IpCYbC_lLMu-4JrygEPW92zZRFwXf_UArMx_iQURYIhyEvhWyHfJ";
-        String csvUrl = "https://docs.google.com/spreadsheets/d/e/" + sheetPublishedId + "/pub?output=csv";
+        String csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNHE2l_d6VIDLvWCB7nL8DBx48IpCYbC_lLMu-4JrygEPW92zZRFwXf_UArMx_iQURYIhyEvhWyHfJ/pub?output=csv";
         
         String htmlData = "<!DOCTYPE html><html lang='hi'><head><meta charset='UTF-8'>" +
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
@@ -33,30 +30,36 @@ public class MainActivity extends AppCompatActivity {
             "body { background-color: #121212; color: #e0e0e0; padding: 16px; }" +
             "h1 { text-align: center; font-size: 20px; margin-bottom: 16px; color: #4caf50; padding-top: 10px; }" +
             ".card { background: #1e1e1e; padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid #333; }" +
-            ".card-title { font-size: 16px; font-weight: bold; margin-bottom: 12px; color: #fff; }" +
-            "input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 14px; outline: none; }" +
-            "input:focus { border-color: #4caf50; }" +
-            ".btn-refresh { background: #4caf50; color: #fff; border: none; font-weight: bold; padding: 12px; width: 100%; border-radius: 8px; margin-bottom: 12px; cursor: pointer; font-size: 14px; }" +
-            ".order-item { background: #252525; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #4caf50; }" +
+            ".card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #fff; }" +
+            "input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 15px; outline: none; transition: 0.3s; }" +
+            "input:focus { border-color: #4caf50; box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }" +
+            ".btn-refresh { background: #4caf50; color: #fff; border: none; font-weight: bold; padding: 12px; width: 100%; border-radius: 8px; margin-bottom: 16px; cursor: pointer; font-size: 14px; }" +
+            ".order-item { background: #252525; padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #4caf50; display: flex; justify-content: space-between; align-items: center; }" +
             ".order-info { font-size: 14px; line-height: 1.6; }" +
-            ".track-id { font-weight: bold; color: #ffb74d; font-size: 15px; }" +
-            ".order-id { color: #fff; font-size: 14px; }" +
+            ".track-id { font-size: 13px; color: #aaa; }" +
+            ".order-id { font-size: 16px; font-weight: bold; color: #81c784; margin-top: 2px; }" +
+            ".btn-copy { background: #333; color: #fff; border: 1px solid #555; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }" +
+            ".btn-copy:active { background: #4caf50; border-color: #4caf50; }" +
+            ".no-result { text-align: center; color: #888; padding: 20px 0; font-size: 14px; }" +
             "</style></head><body>" +
             "<h1>Delivery Tracker</h1>" +
-            "<button class='btn-refresh' onclick='fetchOrders()'>🔄 Refresh Live Data</button>" +
-            "<div class='card'><div class='card-title'>Search Orders</div>" +
-            "<input type='text' id='search-input' placeholder='Search by Tracking ID or Order ID...' oninput='renderOrders()'>" +
+            "<button class='btn-refresh' onclick='fetchOrders()'>🔄 Refresh Data</button>" +
+            "<div class='card'>" +
+            "<div class='card-title'>🔍 Tracking ID (Full or Last 4-5 Digits)</div>" +
+            "<input type='text' id='search-input' placeholder='Type last 4-5 digits e.g. 7890...' oninput='renderOrders()'>" +
             "</div>" +
-            "<div class='card'><div class='card-title'>Orders List</div>" +
-            "<div id='orders-list'>Loading live data...</div></div>" +
+            "<div class='card'>" +
+            "<div class='card-title'>📦 Order Details</div>" +
+            "<div id='orders-list'>Loading data...</div>" +
+            "</div>" +
             "<script>" +
             "let orders = [];" +
             "function fetchOrders() {" +
-            "document.getElementById('orders-list').innerHTML = 'Fetching latest data...';" +
+            "document.getElementById('orders-list').innerHTML = '<div class=\"no-result\">Fetching latest data...</div>';" +
             "fetch('" + csvUrl + "')" +
             ".then(res => res.text())" +
             ".then(csvText => { parseCSV(csvText); })" +
-            ".catch(err => { document.getElementById('orders-list').innerHTML = 'Error loading data: ' + err; });" +
+            ".catch(err => { document.getElementById('orders-list').innerHTML = '<div class=\"no-result\">Error loading data. Try Refreshing.</div>'; });" +
             "}" +
             "function parseCSV(text) {" +
             "let lines = text.split('\\n'); orders = [];" +
@@ -67,24 +70,31 @@ public class MainActivity extends AppCompatActivity {
             "}" +
             "renderOrders();" +
             "}" +
+            "function copyToClipboard(text) {" +
+            "navigator.clipboard.writeText(text);" +
+            "alert('Order ID Copied: ' + text);" +
+            "}" +
             "function renderOrders() {" +
             "const list = document.getElementById('orders-list');" +
-            "const search = document.getElementById('search-input').value.toLowerCase();" +
+            "const search = document.getElementById('search-input').value.trim().toLowerCase();" +
             "list.innerHTML = '';" +
+            "if(search === '') {" +
+            "list.innerHTML = '<div class=\"no-result\">Type last 4-5 digits above to find Order ID</div>';" +
+            "return;" +
+            "}" +
             "let count = 0;" +
             "orders.forEach((item) => {" +
-            "if (item.trackingId.toLowerCase().includes(search) || item.orderId.toLowerCase().includes(search)) {" +
+            "if (item.trackingId.toLowerCase().includes(search)) {" +
             "count++;" +
             "const div = document.createElement('div'); div.className = 'order-item';" +
-            "div.innerHTML = `<div class='order-info'><div class='track-id'>Tracking ID: ${item.trackingId}</div><div class='order-id'>Order ID: ${item.orderId}</div></div>`;" +
+            "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.trackingId}</div><div class='order-id'>Order ID: ${item.orderId}</div></div><button class='btn-copy' onclick='copyToClipboard(\"${item.orderId}\")'>Copy</button>`;" +
             "list.appendChild(div); }" +
             "});" +
-            "if(count === 0) list.innerHTML = 'No matching orders found.';" +
+            "if(count === 0) list.innerHTML = '<div class=\"no-result\">❌ No matching Tracking ID found</div>';" +
             "}" +
             "fetchOrders();" +
             "</script></body></html>";
 
-        // base URL https:// सेट करने से CORS/Security issue हट जाता है
         webView.loadDataWithBaseURL("https://docs.google.com", htmlData, "text/html", "UTF-8", null);
         setContentView(webView);
     }
