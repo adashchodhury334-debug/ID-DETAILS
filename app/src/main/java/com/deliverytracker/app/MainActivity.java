@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import org.json.JSONArray;
@@ -28,6 +29,8 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         
+        // JS Alert/Confirm Enable karne ke liye ChromeClient Required hai
+        webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new WebAppInterface(), "AndroidNative");
         
         String htmlData = "<!DOCTYPE html><html lang='hi'><head><meta charset='UTF-8'>" +
@@ -141,16 +144,14 @@ public class MainActivity extends Activity {
             "}" +
 
             "function clearAllOrders() {" +
-            "if(confirm('क्या आप पूरा डेटा डिलीट करना चाहते हैं?')) {" +
             "AndroidNative.deleteAll();" +
             "updateStatus();" +
             "searchOrders();" +
             "alert('सारा डेटा डिलीट हो गया है!');" +
             "}" +
-            "}" +
 
             "function deleteSingle(id) {" +
-            "AndroidNative.deleteOrder(String(id));" +
+            "AndroidNative.deleteOrder(id);" +
             "updateStatus();" +
             "searchOrders();" +
             "}" +
@@ -175,7 +176,7 @@ public class MainActivity extends Activity {
             "}" +
             "results.forEach(item => {" +
             "const div = document.createElement('div'); div.className = 'order-item';" +
-            "let delBtn = isAdmin ? `<button class='btn-delete' onclick='deleteSingle(\"${item.id}\")'>🗑️</button>` : '';" +
+            "let delBtn = isAdmin ? `<button class='btn-delete' onclick='deleteSingle(${item.id})'>🗑️</button>` : '';" +
             "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.t}</div><div class='order-id'>Order ID: ${item.o}</div></div><div class='action-btns'><button class='btn-copy' onclick='copyToClipboard(\"${item.o}\")'>Copy</button>${delBtn}</div>`;" +
             "list.appendChild(div);" +
             "});" +
@@ -240,9 +241,8 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void deleteOrder(String idStr) {
+        public void deleteOrder(int id) {
             try {
-                int id = Integer.parseInt(idStr);
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
                 db.delete("orders", "id = ?", new String[]{String.valueOf(id)});
             } catch (Exception e) {
