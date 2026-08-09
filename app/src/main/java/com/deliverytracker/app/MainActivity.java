@@ -2,6 +2,8 @@ package com.deliverytracker.app;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.webkit.JsResult;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
@@ -17,6 +19,9 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
+        
+        // Android WebView me JS Prompt/Alert enable karne ke liye WebChromeClient
+        webView.setWebChromeClient(new WebChromeClient());
         
         String htmlData = "<!DOCTYPE html><html lang='hi'><head><meta charset='UTF-8'>" +
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
@@ -42,12 +47,18 @@ public class MainActivity extends Activity {
             ".btn-delete { background: #c62828; color: #fff; border: none; padding: 8px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; }" +
             ".no-result { text-align: center; color: #888; padding: 15px 0; font-size: 14px; }" +
             ".status-info { text-align: center; font-size: 13px; color: #4caf50; margin-bottom: 8px; font-weight: bold; }" +
-            "#admin-panel { display: none; }" +
+            "#admin-panel, #pass-box { display: none; }" +
             "</style></head><body>" +
             "<header>" +
             "<h1>Delivery Tracker</h1>" +
-            "<button class='btn-lock' id='lock-btn' onclick='toggleAdmin()'>🔒 Admin Login</button>" +
+            "<button class='btn-lock' id='lock-btn' onclick='handleAdminClick()'>🔒 Admin Login</button>" +
             "</header>" +
+
+            "<div class='card' id='pass-box'>" +
+            "<div class='card-title'>🔐 Enter Admin PIN</div>" +
+            "<input type='password' id='pin-input' placeholder='Enter PIN...' />" +
+            "<button class='btn-add' onclick='verifyPin()'>Login</button>" +
+            "</div>" +
 
             "<div class='card' id='admin-panel'>" +
             "<div class='card-title'>📋 Admin Panel (Bulk Import / Data Reset)</div>" +
@@ -74,11 +85,39 @@ public class MainActivity extends Activity {
 
             "function updateAdminUI() {" +
             "if(isAdmin) {" +
+            "document.getElementById('pass-box').style.display = 'none';" +
             "document.getElementById('admin-panel').style.display = 'block';" +
             "document.getElementById('lock-btn').innerText = '🔓 Logout Admin';" +
             "} else {" +
+            "document.getElementById('pass-box').style.display = 'none';" +
             "document.getElementById('admin-panel').style.display = 'none';" +
             "document.getElementById('lock-btn').innerText = '🔒 Admin Login';" +
+            "}" +
+            "}" +
+
+            "function handleAdminClick() {" +
+            "if(isAdmin) {" +
+            "isAdmin = false;" +
+            "sessionStorage.removeItem('is_admin');" +
+            "updateAdminUI();" +
+            "renderOrders();" +
+            "} else {" +
+            "let box = document.getElementById('pass-box');" +
+            "box.style.display = box.style.display === 'block' ? 'none' : 'block';" +
+            "}" +
+            "}" +
+
+            "function verifyPin() {" +
+            "let inputPin = document.getElementById('pin-input').value.trim();" +
+            "if(inputPin === ADMIN_PIN) {" +
+            "isAdmin = true;" +
+            "sessionStorage.setItem('is_admin', 'true');" +
+            "document.getElementById('pin-input').value = '';" +
+            "updateAdminUI();" +
+            "renderOrders();" +
+            "alert('Admin Mode Activated!');" +
+            "} else {" +
+            "alert('Wrong PIN!');" +
             "}" +
             "}" +
 
@@ -89,24 +128,6 @@ public class MainActivity extends Activity {
             "document.getElementById('status-text').innerText = '✅ Total Active Orders: ' + orders.length;" +
             "updateAdminUI();" +
             "renderOrders();" +
-            "}" +
-
-            "function toggleAdmin() {" +
-            "if(!isAdmin) {" +
-            "let pin = prompt('Enter Admin PIN:');" +
-            "if(pin === ADMIN_PIN) {" +
-            "isAdmin = true;" +
-            "sessionStorage.setItem('is_admin', 'true');" +
-            "updateAdminUI();" +
-            "alert('Admin Mode Activated!');" +
-            "renderOrders();" +
-            "} else if(pin !== null) { alert('Wrong PIN!'); }" +
-            "} else {" +
-            "isAdmin = false;" +
-            "sessionStorage.removeItem('is_admin');" +
-            "updateAdminUI();" +
-            "renderOrders();" +
-            "}" +
             "}" +
 
             "function bulkImport() {" +
