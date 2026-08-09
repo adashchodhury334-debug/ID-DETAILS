@@ -40,23 +40,22 @@ public class MainActivity extends Activity {
             ".btn-delete { background: #c62828; color: #fff; border: none; padding: 8px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; }" +
             ".no-result { text-align: center; color: #888; padding: 15px 0; font-size: 14px; }" +
             ".status-info { text-align: center; font-size: 13px; color: #4caf50; margin-bottom: 8px; font-weight: bold; }" +
-            ".toggle-btn { background: none; border: 1px solid #4caf50; color: #4caf50; font-size: 11px; padding: 4px 8px; border-radius: 4px; cursor: pointer; }" +
             "</style></head><body>" +
-            "<h1>Delivery Tracker (Admin)</h1>" +
+            "<h1>Delivery Tracker Admin</h1>" +
             
             "<div class='card'>" +
-            "<div class='card-title'>📋 3,000+ Bulk Import (Excel/Sheet)</div>" +
+            "<div class='card-title'>📋 Bulk Import (Google Sheet से पेस्ट करें)</div>" +
             "<textarea id='bulk-input' placeholder='Google Sheet से 3000 ऑर्डर्स कॉपी करके यहाँ पेस्ट करें...'></textarea>" +
             "<button class='btn-add' onclick='bulkImport()'>⚡ Import All Orders</button>" +
             "</div>" +
 
             "<div class='card'>" +
-            "<div class='card-title'>🔍 Instant Search</div>" +
+            "<div class='card-title'>🔍 Search Order</div>" +
             "<input type='text' id='search-input' placeholder='Type last 4-5 digits...' oninput='renderOrders()' style='margin-bottom:0;'>" +
             "</div>" +
 
             "<div class='card'>" +
-            "<div class='card-title'>📦 Order Details <button class='toggle-btn' onclick='toggleShowAll()'>Top 100 / Search</button></div>" +
+            "<div class='card-title'>📦 Order Details</div>" +
             "<div id='status-text' class='status-info'></div>" +
             "<div id='orders-list'></div>" +
             "<button class='btn-danger' onclick='clearAllOrders()'>⚠️ Clear All Saved Data</button>" +
@@ -64,13 +63,15 @@ public class MainActivity extends Activity {
 
             "<script>" +
             "let orders = [];" +
-            "let showAllMode = false;" +
+
             "function loadSavedOrders() {" +
             "let saved = localStorage.getItem('local_orders');" +
             "if(saved) { try { orders = JSON.parse(saved); } catch(e){ orders = []; } }" +
+            "else { orders = []; }" +
             "document.getElementById('status-text').innerText = '✅ Total Saved Orders: ' + orders.length;" +
             "renderOrders();" +
             "}" +
+
             "function bulkImport() {" +
             "let rawText = document.getElementById('bulk-input').value.trim();" +
             "if(!rawText) { alert('पेस्ट बॉक्स खाली है!'); return; }" +
@@ -92,51 +93,43 @@ public class MainActivity extends Activity {
             "document.getElementById('bulk-input').value = '';" +
             "alert('सफलतापूर्वक ' + addedCount + ' ऑर्डर्स इंपोर्ट हो गए!');" +
             "} catch(e) {" +
-            "alert('Memory limit reached. Try importing in 2 parts.');" +
+            "alert('Memory Limit Exceeded!');" +
             "}" +
             "loadSavedOrders();" +
             "}" +
+
             "function clearAllOrders() {" +
             "if(confirm('क्या आप पूरा 3000 डेटा डिलीट करना चाहते हैं?')) {" +
             "orders = [];" +
             "localStorage.removeItem('local_orders');" +
+            "localStorage.clear();" +
+            "document.getElementById('search-input').value = '';" +
             "loadSavedOrders();" +
+            "alert('सारा डेटा सफलता पूर्वक डिलीट हो गया है!');" +
             "}" +
             "}" +
+
             "function deleteOrder(index) {" +
-            "if(confirm('इसे डिलीट करें?')) {" +
             "orders.splice(index, 1);" +
             "localStorage.setItem('local_orders', JSON.stringify(orders));" +
             "loadSavedOrders();" +
             "}" +
-            "}" +
-            "function toggleShowAll() {" +
-            "showAllMode = !showAllMode;" +
-            "renderOrders();" +
-            "}" +
+
             "function copyToClipboard(text) {" +
             "navigator.clipboard.writeText(text);" +
             "alert('Order ID Copied: ' + text);" +
             "}" +
+
             "function renderOrders() {" +
             "const list = document.getElementById('orders-list');" +
             "const search = document.getElementById('search-input').value.trim().toLowerCase();" +
             "list.innerHTML = '';" +
-            "if(showAllMode) {" +
-            "if(orders.length === 0) { list.innerHTML = '<div class=\"no-result\">कोई डेटा नहीं है।</div>'; return; }" +
-            "let limit = Math.min(orders.length, 100);" +
-            "for(let idx = 0; idx < limit; idx++) {" +
-            "let item = orders[idx];" +
-            "const div = document.createElement('div'); div.className = 'order-item';" +
-            "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.trackingId}</div><div class='order-id'>Order ID: ${item.orderId}</div></div><div class='action-btns'><button class='btn-copy' onclick='copyToClipboard(\"${item.orderId}\")'>Copy</button><button class='btn-delete' onclick='deleteOrder(${idx})'>🗑️</button></div>`;" +
-            "list.appendChild(div);" +
-            "}" +
-            "return;" +
-            "}" +
+
             "if(search === '') {" +
             "list.innerHTML = '<div class=\"no-result\">सर्च करने के लिए नंबर डालें</div>';" +
             "return;" +
             "}" +
+
             "let count = 0;" +
             "for(let idx = 0; idx < orders.length; idx++) {" +
             "let item = orders[idx];" +
@@ -152,6 +145,7 @@ public class MainActivity extends Activity {
             "}" +
             "if(count === 0) list.innerHTML = '<div class=\"no-result\">❌ No matching Tracking ID found</div>';" +
             "}" +
+
             "loadSavedOrders();" +
             "</script></body></html>";
 
