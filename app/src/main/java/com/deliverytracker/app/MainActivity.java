@@ -2,8 +2,6 @@ package com.deliverytracker.app;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.webkit.JsResult;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
@@ -19,9 +17,6 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
-        
-        // Android WebView me JS Prompt/Alert enable karne ke liye WebChromeClient
-        webView.setWebChromeClient(new WebChromeClient());
         
         String htmlData = "<!DOCTYPE html><html lang='hi'><head><meta charset='UTF-8'>" +
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
@@ -41,7 +36,7 @@ public class MainActivity extends Activity {
             ".order-item { background: #252525; padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #4caf50; display: flex; justify-content: space-between; align-items: center; }" +
             ".order-info { font-size: 14px; line-height: 1.6; word-break: break-all; }" +
             ".track-id { font-size: 13px; color: #aaa; }" +
-            ".order-id { font-size: 16px; font-weight: bold; color: #81c784; margin-top: 2px; }" +
+            ".order-id { font-size: 15px; font-weight: bold; color: #81c784; margin-top: 2px; }" +
             ".action-btns { display: flex; gap: 8px; flex-shrink: 0; margin-left: 10px; }" +
             ".btn-copy { background: #333; color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }" +
             ".btn-delete { background: #c62828; color: #fff; border: none; padding: 8px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; }" +
@@ -80,7 +75,7 @@ public class MainActivity extends Activity {
 
             "<script>" +
             "let orders = [];" +
-            "let isAdmin = sessionStorage.getItem('is_admin') === 'true';" +
+            "let isAdmin = false;" +
             "const ADMIN_PIN = '7602';" +
 
             "function updateAdminUI() {" +
@@ -98,7 +93,6 @@ public class MainActivity extends Activity {
             "function handleAdminClick() {" +
             "if(isAdmin) {" +
             "isAdmin = false;" +
-            "sessionStorage.removeItem('is_admin');" +
             "updateAdminUI();" +
             "renderOrders();" +
             "} else {" +
@@ -111,7 +105,6 @@ public class MainActivity extends Activity {
             "let inputPin = document.getElementById('pin-input').value.trim();" +
             "if(inputPin === ADMIN_PIN) {" +
             "isAdmin = true;" +
-            "sessionStorage.setItem('is_admin', 'true');" +
             "document.getElementById('pin-input').value = '';" +
             "updateAdminUI();" +
             "renderOrders();" +
@@ -149,21 +142,22 @@ public class MainActivity extends Activity {
             "localStorage.setItem('local_orders', JSON.stringify(orders));" +
             "document.getElementById('bulk-input').value = '';" +
             "alert('सफलतापूर्वक ' + addedCount + ' ऑर्डर्स इंपोर्ट हो गए!');" +
-            "location.reload();" +
+            "loadSavedOrders();" +
             "}" +
 
             "function clearAllOrders() {" +
             "if(confirm('क्या आप पूरा डेटा डिलीट करना चाहते हैं?')) {" +
+            "orders = [];" +
             "localStorage.removeItem('local_orders');" +
+            "loadSavedOrders();" +
             "alert('सारा डेटा डिलीट हो गया है!');" +
-            "location.reload();" +
             "}" +
             "}" +
 
             "function deleteOrder(index) {" +
             "orders.splice(index, 1);" +
             "localStorage.setItem('local_orders', JSON.stringify(orders));" +
-            "location.reload();" +
+            "loadSavedOrders();" +
             "}" +
 
             "function copyToClipboard(text) {" +
@@ -201,7 +195,7 @@ public class MainActivity extends Activity {
             "loadSavedOrders();" +
             "</script></body></html>";
 
-        webView.loadDataWithBaseURL("https://app.local", htmlData, "text/html", "UTF-8", null);
+        webView.loadDataWithBaseURL(null, htmlData, "text/html", "UTF-8", null);
         setContentView(webView);
     }
 }
