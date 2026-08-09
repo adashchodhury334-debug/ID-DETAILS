@@ -21,8 +21,7 @@ public class MainActivity extends Activity {
         
         webView.setWebViewClient(new WebViewClient());
         
-        // Google Sheet Direct JSON API Link
-        String jsonUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNHE2l_d6VIDLvWCB7nL8DBx48IpCYbC_lLMu-4JrygEPW92zZRFwXf/gviz/tq?tqx=out:json";
+        String jsonUrl = "https://api.jsonbin.io/v3/b/6a78b5bfda38895dfecdb6b7";
         
         String htmlData = "<!DOCTYPE html><html lang='hi'><head><meta charset='UTF-8'>" +
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
@@ -60,32 +59,16 @@ public class MainActivity extends Activity {
             "function fetchOrders() {" +
             "document.getElementById('orders-list').innerHTML = '<div class=\"no-result\">Fetching latest data...</div>';" +
             "document.getElementById('status-text').innerText = '';" +
-            "fetch('" + jsonUrl + "&_=" + new Date().getTime() + "')" +
-            ".then(res => res.text())" +
-            ".then(text => {" +
-            "let jsonString = text.match(/google\\.visualization\\.Query\\.setResponse\\(([\\s\\S]*)\\);/);" +
-            "if(jsonString && jsonString[1]) {" +
-            "let data = JSON.parse(jsonString[1]);" +
-            "parseJSON(data);" +
-            "} else { parseCSVFallback(text); }" +
-            "})" +
-            ".catch(err => { document.getElementById('orders-list').innerHTML = '<div class=\"no-result\">Error loading data. Check Internet.</div>'; });" +
-            "}" +
-            "function parseJSON(data) {" +
-            "orders = [];" +
-            "if(!data.table || !data.table.rows) return;" +
-            "let rows = data.table.rows;" +
-            "for(let i = 0; i < rows.length; i++) {" +
-            "let c = rows[i].c;" +
-            "if(!c) continue;" +
-            "let track = c[0] && c[0].v ? String(c[0].v).trim() : '';" +
-            "let order = c[1] && c[1].v ? String(c[1].v).trim() : track;" +
-            "if(track !== '' && !track.toUpperCase().includes('TRACKING ID')) {" +
-            "orders.push({ trackingId: track, orderId: order });" +
-            "}" +
-            "}" +
+            "fetch('" + jsonUrl + "')" +
+            ".then(res => res.json())" +
+            ".then(data => {" +
+            "let record = data.record || data;" +
+            "if(Array.isArray(record)) { orders = record; }" +
+            "else if(typeof record === 'object') { orders = Object.values(record); }" +
             "document.getElementById('status-text').innerText = '✅ Total Orders Loaded: ' + orders.length;" +
             "renderOrders();" +
+            "})" +
+            ".catch(err => { document.getElementById('orders-list').innerHTML = '<div class=\"no-result\">Error loading data. Check Internet or JSON format.</div>'; });" +
             "}" +
             "function copyToClipboard(text) {" +
             "navigator.clipboard.writeText(text);" +
@@ -101,12 +84,12 @@ public class MainActivity extends Activity {
             "}" +
             "let count = 0;" +
             "orders.forEach((item) => {" +
-            "let t = item.trackingId.toLowerCase();" +
-            "let o = item.orderId.toLowerCase();" +
-            "if (t.includes(search) || o.includes(search)) {" +
+            "let track = String(item.trackingId || item.track || item[0] || '').toLowerCase();" +
+            "let order = String(item.orderId || item.order || item[1] || track);" +
+            "if (track.includes(search)) {" +
             "count++;" +
             "const div = document.createElement('div'); div.className = 'order-item';" +
-            "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.trackingId}</div><div class='order-id'>Order ID: ${item.orderId}</div></div><button class='btn-copy' onclick='copyToClipboard(\"${item.orderId}\")'>Copy</button>`;" +
+            "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.trackingId || item.track || item[0]}</div><div class='order-id'>Order ID: ${order}</div></div><button class='btn-copy' onclick='copyToClipboard(\"${order}\")'>Copy</button>`;" +
             "list.appendChild(div); }" +
             "});" +
             "if(count === 0) list.innerHTML = '<div class=\"no-result\">❌ No matching Tracking ID found</div>';" +
@@ -114,7 +97,7 @@ public class MainActivity extends Activity {
             "fetchOrders();" +
             "</script></body></html>";
 
-        webView.loadDataWithBaseURL("https://docs.google.com", htmlData, "text/html", "UTF-8", null);
+        webView.loadDataWithBaseURL("https://api.jsonbin.io", htmlData, "text/html", "UTF-8", null);
         setContentView(webView);
     }
 }
