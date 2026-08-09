@@ -20,45 +20,34 @@ public class MainActivity extends Activity {
         
         String htmlData = "<!DOCTYPE html><html lang='hi'><head><meta charset='UTF-8'>" +
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
-            "<title>Delivery Tracker Admin</title><style>" +
+            "<title>Delivery Tracker</title><style>" +
             "* { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }" +
             "body { background-color: #121212; color: #e0e0e0; padding: 16px; }" +
             "h1 { text-align: center; font-size: 20px; margin-bottom: 16px; color: #4caf50; padding-top: 10px; }" +
             ".card { background: #1e1e1e; padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid #333; }" +
-            ".card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #fff; display: flex; justify-content: space-between; align-items: center; }" +
-            "textarea { width: 100%; height: 120px; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 13px; outline: none; margin-bottom: 10px; resize: none; }" +
-            "input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 15px; outline: none; margin-bottom: 10px; }" +
-            "input:focus, textarea:focus { border-color: #4caf50; box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }" +
-            ".btn-add { background: #4caf50; color: #fff; border: none; font-weight: bold; padding: 14px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 15px; }" +
-            ".btn-danger { background: #c62828; color: #fff; border: none; font-weight: bold; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 13px; margin-top: 12px; }" +
+            ".card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #fff; }" +
+            "input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 15px; outline: none; transition: 0.3s; }" +
+            "input:focus { border-color: #4caf50; box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }" +
             ".order-item { background: #252525; padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #4caf50; display: flex; justify-content: space-between; align-items: center; }" +
             ".order-info { font-size: 14px; line-height: 1.6; word-break: break-all; }" +
             ".track-id { font-size: 13px; color: #aaa; }" +
             ".order-id { font-size: 16px; font-weight: bold; color: #81c784; margin-top: 2px; }" +
-            ".action-btns { display: flex; gap: 8px; flex-shrink: 0; margin-left: 10px; }" +
-            ".btn-copy { background: #333; color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }" +
-            ".btn-delete { background: #c62828; color: #fff; border: none; padding: 8px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; }" +
+            ".btn-copy { background: #333; color: #fff; border: 1px solid #555; padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; flex-shrink: 0; margin-left: 10px; }" +
+            ".btn-copy:active { background: #4caf50; border-color: #4caf50; }" +
             ".no-result { text-align: center; color: #888; padding: 15px 0; font-size: 14px; }" +
             ".status-info { text-align: center; font-size: 13px; color: #4caf50; margin-bottom: 8px; font-weight: bold; }" +
             "</style></head><body>" +
-            "<h1>Delivery Tracker Admin</h1>" +
-            
-            "<div class='card'>" +
-            "<div class='card-title'>📋 Bulk Import (Google Sheet से पेस्ट करें)</div>" +
-            "<textarea id='bulk-input' placeholder='Google Sheet से 3000 ऑर्डर्स कॉपी करके यहाँ पेस्ट करें...'></textarea>" +
-            "<button class='btn-add' onclick='bulkImport()'>⚡ Import All Orders</button>" +
-            "</div>" +
+            "<h1>Delivery Tracker</h1>" +
 
             "<div class='card'>" +
             "<div class='card-title'>🔍 Search Order</div>" +
-            "<input type='text' id='search-input' placeholder='Type last 4-5 digits...' oninput='renderOrders()' style='margin-bottom:0;'>" +
+            "<input type='text' id='search-input' placeholder='Type last 4-5 digits...' oninput='renderOrders()'>" +
             "</div>" +
 
             "<div class='card'>" +
             "<div class='card-title'>📦 Order Details</div>" +
             "<div id='status-text' class='status-info'></div>" +
             "<div id='orders-list'></div>" +
-            "<button class='btn-danger' onclick='clearAllOrders()'>⚠️ Clear All Saved Data</button>" +
             "</div>" +
 
             "<script>" +
@@ -72,49 +61,6 @@ public class MainActivity extends Activity {
             "renderOrders();" +
             "}" +
 
-            "function bulkImport() {" +
-            "let rawText = document.getElementById('bulk-input').value.trim();" +
-            "if(!rawText) { alert('पेस्ट बॉक्स खाली है!'); return; }" +
-            "let lines = rawText.split(/\\r?\\n/);" +
-            "let addedCount = 0;" +
-            "for(let i = 0; i < lines.length; i++) {" +
-            "let line = lines[i].trim();" +
-            "if(!line) continue;" +
-            "let parts = line.split(/[\\t,]/).map(p => p.trim());" +
-            "if(parts.length >= 2 && parts[0] && parts[1]) {" +
-            "if(!parts[0].toUpperCase().includes('TRACKING')) {" +
-            "orders.push({ trackingId: parts[0], orderId: parts[1] });" +
-            "addedCount++;" +
-            "}" +
-            "}" +
-            "}" +
-            "try {" +
-            "localStorage.setItem('local_orders', JSON.stringify(orders));" +
-            "document.getElementById('bulk-input').value = '';" +
-            "alert('सफलतापूर्वक ' + addedCount + ' ऑर्डर्स इंपोर्ट हो गए!');" +
-            "} catch(e) {" +
-            "alert('Memory Limit Exceeded!');" +
-            "}" +
-            "loadSavedOrders();" +
-            "}" +
-
-            "function clearAllOrders() {" +
-            "if(confirm('क्या आप पूरा 3000 डेटा डिलीट करना चाहते हैं?')) {" +
-            "orders = [];" +
-            "localStorage.removeItem('local_orders');" +
-            "localStorage.clear();" +
-            "document.getElementById('search-input').value = '';" +
-            "loadSavedOrders();" +
-            "alert('सारा डेटा सफलता पूर्वक डिलीट हो गया है!');" +
-            "}" +
-            "}" +
-
-            "function deleteOrder(index) {" +
-            "orders.splice(index, 1);" +
-            "localStorage.setItem('local_orders', JSON.stringify(orders));" +
-            "loadSavedOrders();" +
-            "}" +
-
             "function copyToClipboard(text) {" +
             "navigator.clipboard.writeText(text);" +
             "alert('Order ID Copied: ' + text);" +
@@ -126,7 +72,7 @@ public class MainActivity extends Activity {
             "list.innerHTML = '';" +
 
             "if(search === '') {" +
-            "list.innerHTML = '<div class=\"no-result\">सर्च करने के लिए नंबर डालें</div>';" +
+            "list.innerHTML = '<div class=\"no-result\">सर्च करने के लिए लास्ट 4-5 डिजिट डालें</div>';" +
             "return;" +
             "}" +
 
@@ -138,7 +84,7 @@ public class MainActivity extends Activity {
             "if (track.includes(search) || order.includes(search)) {" +
             "count++;" +
             "const div = document.createElement('div'); div.className = 'order-item';" +
-            "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.trackingId}</div><div class='order-id'>Order ID: ${item.orderId}</div></div><div class='action-btns'><button class='btn-copy' onclick='copyToClipboard(\"${item.orderId}\")'>Copy</button><button class='btn-delete' onclick='deleteOrder(${idx})'>🗑️</button></div>`;" +
+            "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.trackingId}</div><div class='order-id'>Order ID: ${item.orderId}</div></div><button class='btn-copy' onclick='copyToClipboard(\"${item.orderId}\")'>Copy</button>`;" +
             "list.appendChild(div);" +
             "if(count >= 20) break;" +
             "}" +
