@@ -17,6 +17,7 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
+        settings.setDatabaseEnabled(true);
         
         String htmlData = "<!DOCTYPE html><html lang='hi'><head><meta charset='UTF-8'>" +
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
@@ -149,6 +150,7 @@ public class MainActivity extends Activity {
             "if(confirm('क्या आप पूरा डेटा डिलीट करना चाहते हैं?')) {" +
             "orders = [];" +
             "localStorage.removeItem('local_orders');" +
+            "localStorage.clear();" +
             "loadSavedOrders();" +
             "alert('सारा डेटा डिलीट हो गया है!');" +
             "}" +
@@ -195,7 +197,8 @@ public class MainActivity extends Activity {
             "loadSavedOrders();" +
             "</script></body></html>";
 
-        webView.loadDataWithBaseURL(null, htmlData, "text/html", "UTF-8", null);
+        // Fixed Local Asset Domain to maintain persistent storage across app restarts
+        webView.loadDataWithBaseURL("file:///android_asset/", htmlData, "text/html", "UTF-8", null);
         setContentView(webView);
     }
 }
