@@ -21,8 +21,8 @@ public class MainActivity extends Activity {
         
         webView.setWebViewClient(new WebViewClient());
         
-        // Direct Query Feed Link (Instant Google Sheet Sync)
-        String csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNHE2l_d6VIDLvWCB7nL8DBx48IpCYbC_lLMu-4JrygEPW92zZRFwXf_UArMx_iQURYIhyEvhWyHfJ/pub?output=csv&timestamp=" + System.currentTimeMillis();
+        // Google Sheet Direct JSON API Link
+        String jsonUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNHE2l_d6VIDLvWCB7nL8DBx48IpCYbC_lLMu-4JrygEPW92zZRFwXf/gviz/tq?tqx=out:json";
         
         String htmlData = "<!DOCTYPE html><html lang='hi'><head><meta charset='UTF-8'>" +
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
             "body { background-color: #121212; color: #e0e0e0; padding: 16px; }" +
             "h1 { text-align: center; font-size: 20px; margin-bottom: 16px; color: #4caf50; padding-top: 10px; }" +
             ".card { background: #1e1e1e; padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid #333; }" +
-            ".card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #fff; display: flex; justify-content: space-between; align-items: center; }" +
+            ".card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #fff; }" +
             "input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 15px; outline: none; transition: 0.3s; }" +
             "input:focus { border-color: #4caf50; box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }" +
             ".btn-refresh { background: #4caf50; color: #fff; border: none; font-weight: bold; padding: 12px; width: 100%; border-radius: 8px; margin-bottom: 16px; cursor: pointer; font-size: 14px; }" +
@@ -60,24 +60,28 @@ public class MainActivity extends Activity {
             "function fetchOrders() {" +
             "document.getElementById('orders-list').innerHTML = '<div class=\"no-result\">Fetching latest data...</div>';" +
             "document.getElementById('status-text').innerText = '';" +
-            "fetch('" + csvUrl + "')" +
+            "fetch('" + jsonUrl + "&_=" + new Date().getTime() + "')" +
             ".then(res => res.text())" +
-            ".then(csvText => { parseCSV(csvText); })" +
+            ".then(text => {" +
+            "let jsonString = text.match(/google\\.visualization\\.Query\\.setResponse\\(([\\s\\S]*)\\);/);" +
+            "if(jsonString && jsonString[1]) {" +
+            "let data = JSON.parse(jsonString[1]);" +
+            "parseJSON(data);" +
+            "} else { parseCSVFallback(text); }" +
+            "})" +
             ".catch(err => { document.getElementById('orders-list').innerHTML = '<div class=\"no-result\">Error loading data. Check Internet.</div>'; });" +
             "}" +
-            "function parseCSV(text) {" +
-            "let lines = text.split(/\\r?\\n/);" +
+            "function parseJSON(data) {" +
             "orders = [];" +
-            "for(let i = 0; i < lines.length; i++) {" +
-            "let line = lines[i].trim();" +
-            "if(!line) continue;" +
-            "let cols = line.split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/).map(c => c.replace(/^\"|\"$/g, '').trim());" +
-            "if(cols.length >= 1 && cols[0] !== '') {" +
-            "let val1 = cols[0];" +
-            "let val2 = (cols.length >= 2 && cols[1] !== '') ? cols[1] : cols[0];" +
-            "if(!val1.toUpperCase().includes('TRACKING ID')) {" +
-            "orders.push({ trackingId: val1, orderId: val2 });" +
-            "}" +
+            "if(!data.table || !data.table.rows) return;" +
+            "let rows = data.table.rows;" +
+            "for(let i = 0; i < rows.length; i++) {" +
+            "let c = rows[i].c;" +
+            "if(!c) continue;" +
+            "let track = c[0] && c[0].v ? String(c[0].v).trim() : '';" +
+            "let order = c[1] && c[1].v ? String(c[1].v).trim() : track;" +
+            "if(track !== '' && !track.toUpperCase().includes('TRACKING ID')) {" +
+            "orders.push({ trackingId: track, orderId: order });" +
             "}" +
             "}" +
             "document.getElementById('status-text').innerText = '✅ Total Orders Loaded: ' + orders.length;" +
