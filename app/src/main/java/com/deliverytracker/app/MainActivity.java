@@ -1,6 +1,7 @@
 package com.deliverytracker.app;
 
 import android.os.Bundle;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,8 +12,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         
         WebView webView = new WebView(this);
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.getSettings().setDomStorageEnabled(true);
+        WebSettings settings = webView.getSettings();
+        
+        // इंटरनेट से डेटा लोड करने की permissions ऑन कर रहे हैं
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        
         webView.setWebViewClient(new WebViewClient());
         
         String sheetPublishedId = "2PACX-1vTNHE2l_d6VIDLvWCB7nL8DBx48IpCYbC_lLMu-4JrygEPW92zZRFwXf_UArMx_iQURYIhyEvhWyHfJ";
@@ -23,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
             "<title>Delivery Tracker</title><style>" +
             "* { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }" +
             "body { background-color: #121212; color: #e0e0e0; padding: 16px; }" +
-            "h1 { text-align: center; font-size: 20px; margin-bottom: 16px; color: #4caf50; }" +
+            "h1 { text-align: center; font-size: 20px; margin-bottom: 16px; color: #4caf50; padding-top: 10px; }" +
             ".card { background: #1e1e1e; padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid #333; }" +
             ".card-title { font-size: 16px; font-weight: bold; margin-bottom: 12px; color: #fff; }" +
             "input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 14px; outline: none; }" +
@@ -48,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
             "fetch('" + csvUrl + "')" +
             ".then(res => res.text())" +
             ".then(csvText => { parseCSV(csvText); })" +
-            ".catch(err => { document.getElementById('orders-list').innerHTML = 'Error loading data.'; });" +
+            ".catch(err => { document.getElementById('orders-list').innerHTML = 'Error loading data: ' + err; });" +
             "}" +
             "function parseCSV(text) {" +
             "let lines = text.split('\\n'); orders = [];" +
@@ -76,7 +84,8 @@ public class MainActivity extends AppCompatActivity {
             "fetchOrders();" +
             "</script></body></html>";
 
-        webView.loadDataWithBaseURL(null, htmlData, "text/html", "UTF-8", null);
+        // base URL https:// सेट करने से CORS/Security issue हट जाता है
+        webView.loadDataWithBaseURL("https://docs.google.com", htmlData, "text/html", "UTF-8", null);
         setContentView(webView);
     }
 }
