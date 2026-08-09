@@ -23,25 +23,42 @@ public class MainActivity extends Activity {
             "<title>Delivery Tracker</title><style>" +
             "* { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }" +
             "body { background-color: #121212; color: #e0e0e0; padding: 16px; }" +
-            "h1 { text-align: center; font-size: 20px; margin-bottom: 16px; color: #4caf50; padding-top: 10px; }" +
+            "header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-top: 10px; }" +
+            "h1 { font-size: 20px; color: #4caf50; margin: 0; }" +
+            ".btn-lock { background: #333; color: #4caf50; border: 1px solid #4caf50; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }" +
             ".card { background: #1e1e1e; padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid #333; }" +
-            ".card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #fff; }" +
-            "input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 15px; outline: none; transition: 0.3s; }" +
-            "input:focus { border-color: #4caf50; box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }" +
+            ".card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #fff; display: flex; justify-content: space-between; align-items: center; }" +
+            "textarea { width: 100%; height: 110px; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 13px; outline: none; margin-bottom: 10px; resize: none; }" +
+            "input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 15px; outline: none; margin-bottom: 10px; }" +
+            "input:focus, textarea:focus { border-color: #4caf50; box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }" +
+            ".btn-add { background: #4caf50; color: #fff; border: none; font-weight: bold; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 14px; }" +
+            ".btn-danger { background: #c62828; color: #fff; border: none; font-weight: bold; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 13px; margin-top: 10px; }" +
             ".order-item { background: #252525; padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #4caf50; display: flex; justify-content: space-between; align-items: center; }" +
             ".order-info { font-size: 14px; line-height: 1.6; word-break: break-all; }" +
             ".track-id { font-size: 13px; color: #aaa; }" +
             ".order-id { font-size: 16px; font-weight: bold; color: #81c784; margin-top: 2px; }" +
-            ".btn-copy { background: #333; color: #fff; border: 1px solid #555; padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; flex-shrink: 0; margin-left: 10px; }" +
-            ".btn-copy:active { background: #4caf50; border-color: #4caf50; }" +
+            ".action-btns { display: flex; gap: 8px; flex-shrink: 0; margin-left: 10px; }" +
+            ".btn-copy { background: #333; color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }" +
+            ".btn-delete { background: #c62828; color: #fff; border: none; padding: 8px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; }" +
             ".no-result { text-align: center; color: #888; padding: 15px 0; font-size: 14px; }" +
             ".status-info { text-align: center; font-size: 13px; color: #4caf50; margin-bottom: 8px; font-weight: bold; }" +
+            "#admin-panel { display: none; }" +
             "</style></head><body>" +
+            "<header>" +
             "<h1>Delivery Tracker</h1>" +
+            "<button class='btn-lock' id='lock-btn' onclick='toggleAdmin()'>🔒 Admin Login</button>" +
+            "</header>" +
+
+            "<div class='card' id='admin-panel'>" +
+            "<div class='card-title'>📋 Admin Panel (Bulk Import / Data Reset)</div>" +
+            "<textarea id='bulk-input' placeholder='Google Sheet से ऑर्डर्स कॉपी करके यहाँ पेस्ट करें...'></textarea>" +
+            "<button class='btn-add' onclick='bulkImport()'>⚡ Import All Orders</button>" +
+            "<button class='btn-danger' onclick='clearAllOrders()'>⚠️ Clear All Saved Data</button>" +
+            "</div>" +
 
             "<div class='card'>" +
             "<div class='card-title'>🔍 Search Order</div>" +
-            "<input type='text' id='search-input' placeholder='Type last 4-5 digits...' oninput='renderOrders()'>" +
+            "<input type='text' id='search-input' placeholder='Type last 4-5 digits...' oninput='renderOrders()' style='margin-bottom:0;'>" +
             "</div>" +
 
             "<div class='card'>" +
@@ -52,13 +69,80 @@ public class MainActivity extends Activity {
 
             "<script>" +
             "let orders = [];" +
+            "let isAdmin = sessionStorage.getItem('is_admin') === 'true';" +
+            "const ADMIN_PIN = '7602';" +
+
+            "function updateAdminUI() {" +
+            "if(isAdmin) {" +
+            "document.getElementById('admin-panel').style.display = 'block';" +
+            "document.getElementById('lock-btn').innerText = '🔓 Logout Admin';" +
+            "} else {" +
+            "document.getElementById('admin-panel').style.display = 'none';" +
+            "document.getElementById('lock-btn').innerText = '🔒 Admin Login';" +
+            "}" +
+            "}" +
 
             "function loadSavedOrders() {" +
             "let saved = localStorage.getItem('local_orders');" +
             "if(saved) { try { orders = JSON.parse(saved); } catch(e){ orders = []; } }" +
             "else { orders = []; }" +
-            "document.getElementById('status-text').innerText = '✅ Total Saved Orders: ' + orders.length;" +
+            "document.getElementById('status-text').innerText = '✅ Total Active Orders: ' + orders.length;" +
+            "updateAdminUI();" +
             "renderOrders();" +
+            "}" +
+
+            "function toggleAdmin() {" +
+            "if(!isAdmin) {" +
+            "let pin = prompt('Enter Admin PIN:');" +
+            "if(pin === ADMIN_PIN) {" +
+            "isAdmin = true;" +
+            "sessionStorage.setItem('is_admin', 'true');" +
+            "updateAdminUI();" +
+            "alert('Admin Mode Activated!');" +
+            "renderOrders();" +
+            "} else if(pin !== null) { alert('Wrong PIN!'); }" +
+            "} else {" +
+            "isAdmin = false;" +
+            "sessionStorage.removeItem('is_admin');" +
+            "updateAdminUI();" +
+            "renderOrders();" +
+            "}" +
+            "}" +
+
+            "function bulkImport() {" +
+            "let rawText = document.getElementById('bulk-input').value.trim();" +
+            "if(!rawText) { alert('पेस्ट बॉक्स खाली है!'); return; }" +
+            "let lines = rawText.split(/\\r?\\n/);" +
+            "let addedCount = 0;" +
+            "for(let i = 0; i < lines.length; i++) {" +
+            "let line = lines[i].trim();" +
+            "if(!line) continue;" +
+            "let parts = line.split(/[\\t,]/).map(p => p.trim());" +
+            "if(parts.length >= 2 && parts[0] && parts[1]) {" +
+            "if(!parts[0].toUpperCase().includes('TRACKING')) {" +
+            "orders.push({ trackingId: parts[0], orderId: parts[1] });" +
+            "addedCount++;" +
+            "}" +
+            "}" +
+            "}" +
+            "localStorage.setItem('local_orders', JSON.stringify(orders));" +
+            "document.getElementById('bulk-input').value = '';" +
+            "alert('सफलतापूर्वक ' + addedCount + ' ऑर्डर्स इंपोर्ट हो गए!');" +
+            "location.reload();" +
+            "}" +
+
+            "function clearAllOrders() {" +
+            "if(confirm('क्या आप पूरा डेटा डिलीट करना चाहते हैं?')) {" +
+            "localStorage.removeItem('local_orders');" +
+            "alert('सारा डेटा डिलीट हो गया है!');" +
+            "location.reload();" +
+            "}" +
+            "}" +
+
+            "function deleteOrder(index) {" +
+            "orders.splice(index, 1);" +
+            "localStorage.setItem('local_orders', JSON.stringify(orders));" +
+            "location.reload();" +
             "}" +
 
             "function copyToClipboard(text) {" +
@@ -84,7 +168,8 @@ public class MainActivity extends Activity {
             "if (track.includes(search) || order.includes(search)) {" +
             "count++;" +
             "const div = document.createElement('div'); div.className = 'order-item';" +
-            "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.trackingId}</div><div class='order-id'>Order ID: ${item.orderId}</div></div><button class='btn-copy' onclick='copyToClipboard(\"${item.orderId}\")'>Copy</button>`;" +
+            "let deleteBtnHtml = isAdmin ? `<button class='btn-delete' onclick='deleteOrder(${idx})'>🗑️</button>` : '';" +
+            "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.trackingId}</div><div class='order-id'>Order ID: ${item.orderId}</div></div><div class='action-btns'><button class='btn-copy' onclick='copyToClipboard(\"${item.orderId}\")'>Copy</button>${deleteBtnHtml}</div>`;" +
             "list.appendChild(div);" +
             "if(count >= 20) break;" +
             "}" +
