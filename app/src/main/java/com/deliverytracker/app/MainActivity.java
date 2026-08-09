@@ -1,12 +1,12 @@
 package com.deliverytracker.app;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import androidx.appcompat.app.AppCompatActivity;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
             "<button class='btn-refresh' onclick='fetchOrders()'>🔄 Refresh Data</button>" +
             "<div class='card'>" +
             "<div class='card-title'>🔍 Tracking ID (Full or Last 4-5 Digits)</div>" +
-            "<input type='text' id='search-input' placeholder='Type last 4-5 digits e.g. 7890...' oninput='renderOrders()'>" +
+            "<input type='text' id='search-input' placeholder='Type digits e.g. 1999...' oninput='renderOrders()'>" +
             "</div>" +
             "<div class='card'>" +
             "<div class='card-title'>📦 Order Details</div>" +
