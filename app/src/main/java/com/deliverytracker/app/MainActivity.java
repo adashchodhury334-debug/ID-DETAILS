@@ -12,11 +12,17 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class MainActivity extends Activity {
     
     private WebView webView;
     private DatabaseHelper dbHelper;
+    // Aapka Google Apps Script Link Yahan Direct Code Me Add Kar Diya Gaya Hai
+    private static final String GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwOzM4Bayr7oc3ilLsFHvqxTpCDtRZT_UiIbZi9lqBU-FDZtnXHjtHeKB3SvlLvewxBA/exec";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,7 +35,6 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         
-        // JS Alert/Confirm Enable karne ke liye ChromeClient Required hai
         webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new WebAppInterface(), "AndroidNative");
         
@@ -37,15 +42,16 @@ public class MainActivity extends Activity {
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
             "<title>Delivery Tracker</title><style>" +
             "* { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }" +
-            "body { background-color: #121212; color: #e0e0e0; padding: 16px; }" +
+            "body { background-color: #121212; color: #e0e0e0; padding: 16px; position: relative; min-height: 100vh; }" +
             "header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-top: 10px; }" +
             "h1 { font-size: 20px; color: #4caf50; margin: 0; }" +
             ".btn-lock { background: #333; color: #4caf50; border: 1px solid #4caf50; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }" +
             ".card { background: #1e1e1e; padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid #333; }" +
             ".card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #fff; display: flex; justify-content: space-between; align-items: center; }" +
-            "textarea { width: 100%; height: 110px; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 13px; outline: none; margin-bottom: 10px; resize: none; }" +
+            "textarea { width: 100%; height: 90px; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 13px; outline: none; margin-bottom: 10px; resize: none; }" +
             "input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 15px; outline: none; margin-bottom: 10px; }" +
-            ".btn-add { background: #4caf50; color: #fff; border: none; font-weight: bold; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 14px; }" +
+            ".btn-add { background: #4caf50; color: #fff; border: none; font-weight: bold; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 14px; margin-bottom: 8px; }" +
+            ".btn-sync { background: #0288d1; color: #fff; border: none; font-weight: bold; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 14px; margin-bottom: 8px; }" +
             ".btn-danger { background: #c62828; color: #fff; border: none; font-weight: bold; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 13px; margin-top: 10px; }" +
             ".order-item { background: #252525; padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #4caf50; display: flex; justify-content: space-between; align-items: center; }" +
             ".order-info { font-size: 14px; line-height: 1.6; word-break: break-all; }" +
@@ -57,7 +63,12 @@ public class MainActivity extends Activity {
             ".no-result { text-align: center; color: #888; padding: 15px 0; font-size: 14px; }" +
             ".status-info { text-align: center; font-size: 13px; color: #4caf50; margin-bottom: 8px; font-weight: bold; }" +
             "#admin-panel, #pass-box { display: none; }" +
+            ".welcome-popup { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #4caf50; color: #121212; padding: 12px 24px; border-radius: 30px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 15px rgba(76,175,80,0.4); opacity: 0; transition: opacity 0.3s ease; pointer-events: none; z-index: 9999; }" +
+            ".welcome-popup.show { opacity: 1; }" +
             "</style></head><body>" +
+
+            "<div id='welcome-toast' class='welcome-popup'>👋 Welcome, आदर्श!</div>" +
+
             "<header>" +
             "<h1>Delivery Tracker</h1>" +
             "<button class='btn-lock' id='lock-btn' onclick='handleAdminClick()'>🔒 Admin Login</button>" +
@@ -70,9 +81,13 @@ public class MainActivity extends Activity {
             "</div>" +
 
             "<div class='card' id='admin-panel'>" +
-            "<div class='card-title'>📋 Admin Panel (Bulk Import / Data Reset)</div>" +
-            "<textarea id='bulk-input' placeholder='Google Sheet से ऑर्डर्स कॉपी करके यहाँ पेस्ट करें...'></textarea>" +
-            "<button class='btn-add' onclick='bulkImport()'>⚡ Import All Orders</button>" +
+            "<div class='card-title'>🔄 Google Sheet Auto Sync</div>" +
+            "<button class='btn-sync' onclick='syncGoogleSheet()'>🔄 Sync From Google Sheet</button>" +
+
+            "<div class='card-title' style='margin-top:15px;'>📋 Manual Import (Copy/Paste)</div>" +
+            "<textarea id='bulk-input' placeholder='Google Sheet से मैन्युअली टेक्स्ट कॉपी करके पेस्ट करें...'></textarea>" +
+            "<button class='btn-add' onclick='bulkImport()'>⚡ Import Manual Orders</button>" +
+
             "<button class='btn-danger' onclick='clearAllOrders()'>⚠️ Clear All Saved Data</button>" +
             "</div>" +
 
@@ -90,6 +105,12 @@ public class MainActivity extends Activity {
             "<script>" +
             "let isAdmin = false;" +
             "const ADMIN_PIN = '7602';" +
+
+            "function showWelcomePopup() {" +
+            "let toast = document.getElementById('welcome-toast');" +
+            "toast.classList.add('show');" +
+            "setTimeout(() => { toast.classList.remove('show'); }, 1500);" +
+            "}" +
 
             "function updateStatus() {" +
             "let total = AndroidNative.getTotalCount();" +
@@ -121,6 +142,20 @@ public class MainActivity extends Activity {
             "} else { alert('Wrong PIN!'); }" +
             "}" +
 
+            "function syncGoogleSheet() {" +
+            "alert('गूगल शीट से डाटा सिंक हो रहा है...');" +
+            "setTimeout(() => {" +
+            "let added = AndroidNative.syncFromSheet();" +
+            "if(added >= 0) {" +
+            "alert('सफलतापूर्वक ' + added + ' नए ऑर्डर्स सिंक हो गए!');" +
+            "updateStatus();" +
+            "searchOrders();" +
+            "} else {" +
+            "alert('❌ Error! इंटरनेट कनेक्शन चेक करें।');" +
+            "}" +
+            "}, 100);" +
+            "}" +
+
             "function bulkImport() {" +
             "let rawText = document.getElementById('bulk-input').value.trim();" +
             "if(!rawText) { alert('पेस्ट बॉक्स खाली है!'); return; }" +
@@ -138,7 +173,7 @@ public class MainActivity extends Activity {
             "}" +
             "let added = AndroidNative.insertBulk(JSON.stringify(items));" +
             "document.getElementById('bulk-input').value = '';" +
-            "alert('सफलतापूर्वक ' + added + ' ऑर्डर्स सेव हो गए!');" +
+            "alert('सफलतापूर्वक ' + added + ' ऑर्डर्स मैन्युअली सेव हो गए!');" +
             "updateStatus();" +
             "searchOrders();" +
             "}" +
@@ -183,15 +218,54 @@ public class MainActivity extends Activity {
             "}" +
 
             "updateStatus();" +
+            "showWelcomePopup();" +
             "</script></body></html>";
 
         webView.loadDataWithBaseURL(null, htmlData, "text/html", "UTF-8", null);
         setContentView(webView);
     }
 
-    // Android Native SQLite Interface
     public class WebAppInterface {
         
+        @JavascriptInterface
+        public int syncFromSheet() {
+            int count = 0;
+            try {
+                URL url = new URL(GOOGLE_SCRIPT_URL);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setInstanceFollowRedirects(true);
+                conn.setConnectTimeout(10000);
+                
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                db.beginTransaction();
+                
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split(",");
+                    if (parts.length >= 2) {
+                        String t = parts[0].replace("\"", "").trim();
+                        String o = parts[1].replace("\"", "").trim();
+                        if (!t.isEmpty() && !o.isEmpty() && !t.toUpperCase().contains("TRACKING")) {
+                            ContentValues cv = new ContentValues();
+                            cv.put("tracking_id", t);
+                            cv.put("order_id", o);
+                            db.insert("orders", null, cv);
+                            count++;
+                        }
+                    }
+                }
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                reader.close();
+                return count;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return -1;
+            }
+        }
+
         @JavascriptInterface
         public int insertBulk(String jsonStr) {
             SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -269,7 +343,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    // SQLite Database Class
     private static class DatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "DeliveryTracker.db";
         private static final int DATABASE_VERSION = 1;
