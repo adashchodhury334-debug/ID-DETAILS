@@ -21,7 +21,6 @@ public class MainActivity extends Activity {
     
     private WebView webView;
     private DatabaseHelper dbHelper;
-    // Aapka Google Apps Script Link Yahan Direct Code Me Add Kar Diya Gaya Hai
     private static final String GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwOzM4Bayr7oc3ilLsFHvqxTpCDtRZT_UiIbZi9lqBU-FDZtnXHjtHeKB3SvlLvewxBA/exec";
 
     @Override
@@ -56,18 +55,20 @@ public class MainActivity extends Activity {
             ".order-item { background: #252525; padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #4caf50; display: flex; justify-content: space-between; align-items: center; }" +
             ".order-info { font-size: 14px; line-height: 1.6; word-break: break-all; }" +
             ".track-id { font-size: 13px; color: #aaa; }" +
-            ".order-id { font-size: 15px; font-weight: bold; color: #81c784; margin-top: 2px; }" +
+            ".order-id { font-size: 16px; font-weight: bold; color: #81c784; margin-top: 2px; }" +
             ".action-btns { display: flex; gap: 8px; flex-shrink: 0; margin-left: 10px; }" +
             ".btn-copy { background: #333; color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }" +
             ".btn-delete { background: #c62828; color: #fff; border: none; padding: 8px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; }" +
             ".no-result { text-align: center; color: #888; padding: 15px 0; font-size: 14px; }" +
             ".status-info { text-align: center; font-size: 13px; color: #4caf50; margin-bottom: 8px; font-weight: bold; }" +
             "#admin-panel, #pass-box { display: none; }" +
-            ".welcome-popup { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #4caf50; color: #121212; padding: 12px 24px; border-radius: 30px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 15px rgba(76,175,80,0.4); opacity: 0; transition: opacity 0.3s ease; pointer-events: none; z-index: 9999; }" +
+            "/* Managed By Adarsh Welcome Banner */" +
+            ".welcome-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(30, 30, 30, 0.95); color: #4caf50; padding: 20px 30px; border-radius: 16px; font-weight: bold; font-size: 18px; text-align: center; border: 2px solid #4caf50; box-shadow: 0 10px 30px rgba(0,0,0,0.8); opacity: 0; transition: opacity 0.4s ease; pointer-events: none; z-index: 9999; letter-spacing: 1px; }" +
             ".welcome-popup.show { opacity: 1; }" +
             "</style></head><body>" +
 
-            "<div id='welcome-toast' class='welcome-popup'>👋 Welcome, आदर्श!</div>" +
+            "<!-- Opening Banner -->" +
+            "<div id='welcome-toast' class='welcome-popup'>✨ MANAGED BY ADARSH ✨</div>" +
 
             "<header>" +
             "<h1>Delivery Tracker</h1>" +
@@ -81,7 +82,7 @@ public class MainActivity extends Activity {
             "</div>" +
 
             "<div class='card' id='admin-panel'>" +
-            "<div class='card-title'>🔄 Google Sheet Auto Sync</div>" +
+            "<div class='card-title'>🔄 Google Sheet Auto Sync (30k+ Capacity)</div>" +
             "<button class='btn-sync' onclick='syncGoogleSheet()'>🔄 Sync From Google Sheet</button>" +
 
             "<div class='card-title' style='margin-top:15px;'>📋 Manual Import (Copy/Paste)</div>" +
@@ -92,24 +93,24 @@ public class MainActivity extends Activity {
             "</div>" +
 
             "<div class='card'>" +
-            "<div class='card-title'>🔍 Search Order</div>" +
-            "<input type='text' id='search-input' placeholder='Type last 4-5 digits...' oninput='searchOrders()' style='margin-bottom:0;'>" +
+            "<div class='card-title'>🔍 Enter Tracking ID</div>" +
+            "<input type='text' id='search-input' placeholder='Enter Tracking ID (e.g. last 4-5 digits)...' oninput='searchOrders()' style='margin-bottom:0;'>" +
             "</div>" +
 
             "<div class='card'>" +
-            "<div class='card-title'>📦 Order Details</div>" +
+            "<div class='card-title'>📦 Order Result</div>" +
             "<div id='status-text' class='status-info'></div>" +
             "<div id='orders-list'></div>" +
             "</div>" +
 
             "<script>" +
             "let isAdmin = false;" +
-            "const ADMIN_PIN = '7602';" +
+            "const ADMIN_PIN = '9547927698';" +
 
             "function showWelcomePopup() {" +
             "let toast = document.getElementById('welcome-toast');" +
             "toast.classList.add('show');" +
-            "setTimeout(() => { toast.classList.remove('show'); }, 1500);" +
+            "setTimeout(() => { toast.classList.remove('show'); }, 2000);" +
             "}" +
 
             "function updateStatus() {" +
@@ -143,11 +144,11 @@ public class MainActivity extends Activity {
             "}" +
 
             "function syncGoogleSheet() {" +
-            "alert('गूगल शीट से डाटा सिंक हो रहा है...');" +
+            "alert('गूगल शीट से 30,000+ क्षमता पर डाटा सिंक हो रहा है...');" +
             "setTimeout(() => {" +
             "let added = AndroidNative.syncFromSheet();" +
             "if(added >= 0) {" +
-            "alert('सफलतापूर्वक ' + added + ' नए ऑर्डर्स सिंक हो गए!');" +
+            "alert('सफलतापूर्वक ' + added + ' ऑर्डर्स सिंक हो गए!');" +
             "updateStatus();" +
             "searchOrders();" +
             "} else {" +
@@ -201,18 +202,18 @@ public class MainActivity extends Activity {
             "const search = document.getElementById('search-input').value.trim();" +
             "list.innerHTML = '';" +
             "if(search === '') {" +
-            "list.innerHTML = '<div class=\"no-result\">सर्च करने के लिए लास्ट 4-5 डिजिट डालें</div>';" +
+            "list.innerHTML = '<div class=\"no-result\">ऑर्डर देखने के लिए Tracking ID दर्ज करें</div>';" +
             "return;" +
             "}" +
-            "let results = JSON.parse(AndroidNative.search(search));" +
+            "let results = JSON.parse(AndroidNative.searchByTrackingId(search));" +
             "if(results.length === 0) {" +
-            "list.innerHTML = '<div class=\"no-result\">❌ No matching Tracking ID found</div>';" +
+            "list.innerHTML = '<div class=\"no-result\">❌ No Order ID found for this Tracking ID</div>';" +
             "return;" +
             "}" +
             "results.forEach(item => {" +
             "const div = document.createElement('div'); div.className = 'order-item';" +
             "let delBtn = isAdmin ? `<button class='btn-delete' onclick='deleteSingle(${item.id})'>🗑️</button>` : '';" +
-            "div.innerHTML = `<div class='order-info'><div class='track-id'>Track: ${item.t}</div><div class='order-id'>Order ID: ${item.o}</div></div><div class='action-btns'><button class='btn-copy' onclick='copyToClipboard(\"${item.o}\")'>Copy</button>${delBtn}</div>`;" +
+            "div.innerHTML = `<div class='order-info'><div class='track-id'>Tracking ID: ${item.t}</div><div class='order-id'>Order ID: ${item.o}</div></div><div class='action-btns'><button class='btn-copy' onclick='copyToClipboard(\"${item.o}\")'>Copy</button>${delBtn}</div>`;" +
             "list.appendChild(div);" +
             "});" +
             "}" +
@@ -235,7 +236,7 @@ public class MainActivity extends Activity {
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.setInstanceFollowRedirects(true);
-                conn.setConnectTimeout(10000);
+                conn.setConnectTimeout(15000);
                 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -291,11 +292,12 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public String search(String query) {
+        public String searchByTrackingId(String trackingQuery) {
             SQLiteDatabase db = dbHelper.getReadableDatabase();
             JSONArray arr = new JSONArray();
-            Cursor cursor = db.rawQuery("SELECT id, tracking_id, order_id FROM orders WHERE tracking_id LIKE ? OR order_id LIKE ? LIMIT 20", 
-                    new String[]{"%" + query + "%", "%" + query + "%"});
+            // Optimized query for high speed with 30,000+ database records
+            Cursor cursor = db.rawQuery("SELECT id, tracking_id, order_id FROM orders WHERE tracking_id LIKE ? LIMIT 30", 
+                    new String[]{"%" + trackingQuery + "%"});
             try {
                 if (cursor.moveToFirst()) {
                     do {
@@ -354,6 +356,7 @@ public class MainActivity extends Activity {
         @Override
         public void onCreate(SQLiteDatabase db) {
             db.execSQL("CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, tracking_id TEXT, order_id TEXT);");
+            db.execSQL("CREATE INDEX idx_tracking_id ON orders(tracking_id);"); // Index added for 30k+ speed boost
         }
 
         @Override
@@ -362,4 +365,4 @@ public class MainActivity extends Activity {
             onCreate(db);
         }
     }
-}
+                    }
