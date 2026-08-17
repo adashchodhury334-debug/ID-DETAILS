@@ -16,12 +16,15 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
     
     private WebView webView;
     private DatabaseHelper dbHelper;
-    private static final String GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwOzM4Bayr7oc3ilLsFHvqxTpCDtRZT_UiIbZi9lqBU-FDZtnXHjtHeKB3SvlLvewxBA/exec";
+    private static final String GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1Dul38iNZ_eNmABVuYVWhrUg9F_xVMvaVvQvLIXlySj4/export?format=csv";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +65,19 @@ public class MainActivity extends Activity {
             ".no-result { text-align: center; color: #888; padding: 15px 0; font-size: 14px; }" +
             ".status-info { text-align: center; font-size: 13px; color: #4caf50; margin-bottom: 8px; font-weight: bold; }" +
             "#admin-panel, #pass-box { display: none; }" +
+            "/* Performance Dashboard Styling */" +
+            ".perf-card { background: #252525; border-radius: 10px; padding: 14px; margin-bottom: 12px; border-left: 5px solid #00e676; }" +
+            ".perf-name { font-size: 16px; font-weight: bold; color: #00e676; margin-bottom: 2px; }" +
+            ".perf-phone { font-size: 13px; color: #aaa; margin-bottom: 8px; }" +
+            ".perf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 13px; }" +
+            ".perf-item { background: #1a1a1a; padding: 6px 8px; border-radius: 6px; border: 1px solid #333; }" +
+            ".perf-item span { font-weight: bold; }" +
+            ".c-ofd { color: #29b6f6; }" +
+            ".c-del { color: #66bb6a; }" +
+            ".c-ofp { color: #ffa726; }" +
+            ".c-ofpc { color: #ab47bc; }" +
+            ".c-tot { color: #ffca28; }" +
+            ".c-rate { color: #ff4081; font-size: 14px; }" +
             "/* Managed By Adarsh Welcome Banner */" +
             ".welcome-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(30, 30, 30, 0.95); color: #4caf50; padding: 20px 30px; border-radius: 16px; font-weight: bold; font-size: 18px; text-align: center; border: 2px solid #4caf50; box-shadow: 0 10px 30px rgba(0,0,0,0.8); opacity: 0; transition: opacity 0.4s ease; pointer-events: none; z-index: 9999; letter-spacing: 1px; }" +
             ".welcome-popup.show { opacity: 1; }" +
@@ -103,6 +119,11 @@ public class MainActivity extends Activity {
             "<div id='orders-list'></div>" +
             "</div>" +
 
+            "<div class='card'>" +
+            "<div class='card-title'>📊 Agent Performance & Conversion %</div>" +
+            "<div id='perf-list'><div class='no-result'>सिंक करने पर परफॉरमेंस लोड होगी...</div></div>" +
+            "</div>" +
+
             "<script>" +
             "let isAdmin = false;" +
             "const ADMIN_PIN = '9547927698';" +
@@ -116,6 +137,7 @@ public class MainActivity extends Activity {
             "function updateStatus() {" +
             "let total = AndroidNative.getTotalCount();" +
             "document.getElementById('status-text').innerText = '✅ Total Active Orders: ' + total;" +
+            "loadPerformance();" +
             "}" +
 
             "function handleAdminClick() {" +
@@ -144,7 +166,7 @@ public class MainActivity extends Activity {
             "}" +
 
             "function syncGoogleSheet() {" +
-            "alert('गूगल शीट से 30,000+ क्षमता पर डाटा सिंक हो रहा है...');" +
+            "alert('गूगल शीट से लाइव डाटा सिंक हो रहा है...');" +
             "setTimeout(() => {" +
             "let added = AndroidNative.syncFromSheet();" +
             "if(added >= 0) {" +
@@ -155,6 +177,31 @@ public class MainActivity extends Activity {
             "alert('❌ Error! इंटरनेट कनेक्शन चेक करें।');" +
             "}" +
             "}, 100);" +
+            "}" +
+
+            "function loadPerformance() {" +
+            "let json = AndroidNative.getPerformanceJson();" +
+            "let list = document.getElementById('perf-list');" +
+            "if(!json || json === '[]') {" +
+            "list.innerHTML = '<div class=\"no-result\">कोई परफॉरमेंस डेटा उपलब्ध नहीं है</div>';" +
+            "return;" +
+            "}" +
+            "let data = JSON.parse(json);" +
+            "list.innerHTML = '';" +
+            "data.forEach(item => {" +
+            "let card = `<div class='perf-card'>" +
+            "<div class='perf-name'>👤 ${item.name}</div>" +
+            "<div class='perf-phone'>📞 ${item.mobile}</div>" +
+            "<div class='perf-grid'>" +
+            "<div class='perf-item'>OFD: <span class='c-ofd'>${item.ofd}</span></div>" +
+            "<div class='perf-item'>Delivered: <span class='c-del'>${item.delivered}</span></div>" +
+            "<div class='perf-item'>OFP: <span class='c-ofp'>${item.ofp}</span></div>" +
+            "<div class='perf-item'>OFP Done: <span class='c-ofpc'>${item.ofpComp}</span></div>" +
+            "<div class='perf-item'>Total: <span class='c-tot'>${item.totalOfdOfp}</span></div>" +
+            "<div class='perf-item'>Conv %: <span class='c-rate'>${item.conversionRate}</span></div>" +
+            "</div></div>`;" +
+            "list.innerHTML += card;" +
+            "});" +
             "}" +
 
             "function bulkImport() {" +
@@ -232,7 +279,7 @@ public class MainActivity extends Activity {
         public int syncFromSheet() {
             int count = 0;
             try {
-                URL url = new URL(GOOGLE_SCRIPT_URL);
+                URL url = new URL(GOOGLE_SHEET_CSV_URL);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.setInstanceFollowRedirects(true);
@@ -242,127 +289,88 @@ public class MainActivity extends Activity {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
                 db.beginTransaction();
                 
+                // Clear old performance and unique sync table
+                db.delete("orders", null, null);
+                db.delete("agent_performance", null, null);
+
+                HashSet<String> seenTrackingIds = new HashSet<>();
+                LinkedHashMap<String, PerformanceData> agentMap = new LinkedHashMap<>();
+
                 String line;
+                boolean isHeader = true;
+
                 while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(",");
+                    if (isHeader) {
+                        isHeader = false;
+                        continue;
+                    }
+
+                    String[] parts = line.split(",", -1);
                     if (parts.length >= 2) {
-                        String t = parts[0].replace("\"", "").trim();
-                        String o = parts[1].replace("\"", "").trim();
-                        if (!t.isEmpty() && !o.isEmpty() && !t.toUpperCase().contains("TRACKING")) {
+                        String trackingId = parts[0].replace("\"", "").trim();
+                        String orderId = parts[1].replace("\"", "").trim();
+
+                        if (trackingId.isEmpty() || seenTrackingIds.contains(trackingId)) {
+                            continue;
+                        }
+                        seenTrackingIds.add(trackingId);
+
+                        if (!trackingId.toUpperCase().contains("TRACKING") && !orderId.isEmpty()) {
                             ContentValues cv = new ContentValues();
-                            cv.put("tracking_id", t);
-                            cv.put("order_id", o);
+                            cv.put("tracking_id", trackingId);
+                            cv.put("order_id", orderId);
                             db.insert("orders", null, cv);
                             count++;
                         }
+
+                        // Parse agent performance columns C to H
+                        String name = (parts.length > 2) ? parts[2].replace("\"", "").trim() : "";
+                        String mobile = (parts.length > 3) ? parts[3].replace("\"", "").trim() : "";
+
+                        if (!name.isEmpty()) {
+                            int ofd = (parts.length > 4 && !parts[4].trim().isEmpty()) ? parseSafeInt(parts[4]) : 0;
+                            int del = (parts.length > 5 && !parts[5].trim().isEmpty()) ? parseSafeInt(parts[5]) : 0;
+                            int ofp = (parts.length > 6 && !parts[6].trim().isEmpty()) ? parseSafeInt(parts[6]) : 0;
+                            int ofpComp = (parts.length > 7 && !parts[7].trim().isEmpty()) ? parseSafeInt(parts[7]) : 0;
+
+                            String key = name + "_" + mobile;
+                            PerformanceData pData = agentMap.get(key);
+                            if (pData == null) {
+                                pData = new PerformanceData(name, mobile);
+                                agentMap.put(key, pData);
+                            }
+                            pData.ofd += ofd;
+                            pData.delivered += del;
+                            pData.ofp += ofp;
+                            pData.ofpComp += ofpComp;
+                        }
                     }
                 }
-                db.setTransactionSuccessful();
-                db.endTransaction();
-                reader.close();
-                return count;
-            } catch (Exception e) {
-                e.printStackTrace();
-                return -1;
-            }
-        }
 
-        @JavascriptInterface
-        public int insertBulk(String jsonStr) {
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            db.beginTransaction();
-            int count = 0;
-            try {
-                JSONArray arr = new JSONArray(jsonStr);
-                for (int i = 0; i < arr.length(); i++) {
-                    JSONObject obj = arr.getJSONObject(i);
-                    ContentValues cv = new ContentValues();
-                    cv.put("tracking_id", obj.getString("t"));
-                    cv.put("order_id", obj.getString("o"));
-                    db.insert("orders", null, cv);
-                    count++;
-                }
-                db.setTransactionSuccessful();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                db.endTransaction();
-            }
-            return count;
-        }
-
-        @JavascriptInterface
-        public String searchByTrackingId(String trackingQuery) {
-            SQLiteDatabase db = dbHelper.getReadableDatabase();
-            JSONArray arr = new JSONArray();
-            // Optimized query for high speed with 30,000+ database records
-            Cursor cursor = db.rawQuery("SELECT id, tracking_id, order_id FROM orders WHERE tracking_id LIKE ? LIMIT 30", 
-                    new String[]{"%" + trackingQuery + "%"});
-            try {
-                if (cursor.moveToFirst()) {
-                    do {
-                        JSONObject obj = new JSONObject();
-                        obj.put("id", cursor.getInt(0));
-                        obj.put("t", cursor.getString(1));
-                        obj.put("o", cursor.getString(2));
-                        arr.put(obj);
-                    } while (cursor.moveToNext());
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                cursor.close();
-            }
-            return arr.toString();
-        }
-
-        @JavascriptInterface
-        public void deleteOrder(int id) {
-            try {
-                SQLiteDatabase db = dbHelper.getWritableDatabase();
-                db.delete("orders", "id = ?", new String[]{String.valueOf(id)});
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        @JavascriptInterface
-        public void deleteAll() {
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            db.delete("orders", null, null);
-        }
-
-        @JavascriptInterface
-        public int getTotalCount() {
-            SQLiteDatabase db = dbHelper.getReadableDatabase();
-            Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM orders", null);
-            int count = 0;
-            if (cursor.moveToFirst()) {
-                count = cursor.getInt(0);
-            }
-            cursor.close();
-            return count;
-        }
-    }
-
-    private static class DatabaseHelper extends SQLiteOpenHelper {
-        private static final String DATABASE_NAME = "DeliveryTracker.db";
-        private static final int DATABASE_VERSION = 1;
-
-        public DatabaseHelper(Activity context) {
-            super(context, DATABASE_NAME, null, DATABASE_VERSION);
-        }
-
-        @Override
-        public void onCreate(SQLiteDatabase db) {
-            db.execSQL("CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, tracking_id TEXT, order_id TEXT);");
-            db.execSQL("CREATE INDEX idx_tracking_id ON orders(tracking_id);"); // Index added for 30k+ speed boost
-        }
-
-        @Override
-        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            db.execSQL("DROP TABLE IF EXISTS orders");
-            onCreate(db);
-        }
-    }
+                // Save aggregated agent performance into database
+                for (PerformanceData p : agentMap.values()) {
+                    ContentValues pCv = new ContentValues();
+                    pCv.put("name", p.name);
+                    pCv.put("mobile", p.mobile);
+                    pCv.put("ofd", p.ofd);
+                    pCv.put("delivered", p.delivered);
+                    pCv.put("ofp", p.ofp);
+                    pCv.put("ofp_comp", p.ofpComp);
+                    pCv.put("total_attempts", (p.ofd + p.ofp));
+                    pCv.put("total_complete", (p.delivered + p.ofpComp));
+                    
+                    int totalAttempts = p.ofd + p.ofp;
+                    int totalComplete = p.delivered + p.ofpComp;
+                    String rate = "0%";
+                    if (totalAttempts > 0) {
+                        double r = ((double) totalComplete / totalAttempts) * 100.0;
+                        rate = String.format(Locale.US, "%.1f%%", r);
                     }
+                    pCv.put("conversion_rate", rate);
+
+                    db.insert("agent_performance", null, pCv);
+                }
+
+                db.setTransactionSuccessful();
+                db.endTransaction();
+    
