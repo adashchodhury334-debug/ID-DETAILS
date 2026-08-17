@@ -65,7 +65,6 @@ public class MainActivity extends Activity {
             ".no-result { text-align: center; color: #888; padding: 15px 0; font-size: 14px; }" +
             ".status-info { text-align: center; font-size: 13px; color: #4caf50; margin-bottom: 8px; font-weight: bold; }" +
             "#admin-panel, #pass-box { display: none; }" +
-            "/* Performance Dashboard Styling */" +
             ".perf-card { background: #252525; border-radius: 10px; padding: 14px; margin-bottom: 12px; border-left: 5px solid #00e676; }" +
             ".perf-name { font-size: 16px; font-weight: bold; color: #00e676; margin-bottom: 2px; }" +
             ".perf-phone { font-size: 13px; color: #aaa; margin-bottom: 8px; }" +
@@ -78,68 +77,53 @@ public class MainActivity extends Activity {
             ".c-ofpc { color: #ab47bc; }" +
             ".c-tot { color: #ffca28; }" +
             ".c-rate { color: #ff4081; font-size: 14px; }" +
-            "/* Managed By Adarsh Welcome Banner */" +
             ".welcome-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(30, 30, 30, 0.95); color: #4caf50; padding: 20px 30px; border-radius: 16px; font-weight: bold; font-size: 18px; text-align: center; border: 2px solid #4caf50; box-shadow: 0 10px 30px rgba(0,0,0,0.8); opacity: 0; transition: opacity 0.4s ease; pointer-events: none; z-index: 9999; letter-spacing: 1px; }" +
             ".welcome-popup.show { opacity: 1; }" +
             "</style></head><body>" +
-
-            "<!-- Opening Banner -->" +
             "<div id='welcome-toast' class='welcome-popup'>✨ MANAGED BY ADARSH ✨</div>" +
-
             "<header>" +
             "<h1>Delivery Tracker</h1>" +
             "<button class='btn-lock' id='lock-btn' onclick='handleAdminClick()'>🔒 Admin Login</button>" +
             "</header>" +
-
             "<div class='card' id='pass-box'>" +
             "<div class='card-title'>🔐 Enter Admin PIN</div>" +
             "<input type='password' id='pin-input' placeholder='Enter PIN...' />" +
             "<button class='btn-add' onclick='verifyPin()'>Login</button>" +
             "</div>" +
-
             "<div class='card' id='admin-panel'>" +
             "<div class='card-title'>🔄 Google Sheet Auto Sync (30k+ Capacity)</div>" +
             "<button class='btn-sync' onclick='syncGoogleSheet()'>🔄 Sync From Google Sheet</button>" +
-
             "<div class='card-title' style='margin-top:15px;'>📋 Manual Import (Copy/Paste)</div>" +
             "<textarea id='bulk-input' placeholder='Google Sheet से मैन्युअली टेक्स्ट कॉपी करके पेस्ट करें...'></textarea>" +
             "<button class='btn-add' onclick='bulkImport()'>⚡ Import Manual Orders</button>" +
-
             "<button class='btn-danger' onclick='clearAllOrders()'>⚠️ Clear All Saved Data</button>" +
             "</div>" +
-
             "<div class='card'>" +
             "<div class='card-title'>🔍 Enter Tracking ID</div>" +
             "<input type='text' id='search-input' placeholder='Enter Tracking ID (e.g. last 4-5 digits)...' oninput='searchOrders()' style='margin-bottom:0;'>" +
             "</div>" +
-
             "<div class='card'>" +
             "<div class='card-title'>📦 Order Result</div>" +
             "<div id='status-text' class='status-info'></div>" +
             "<div id='orders-list'></div>" +
             "</div>" +
-
             "<div class='card'>" +
             "<div class='card-title'>📊 Agent Performance & Conversion %</div>" +
             "<div id='perf-list'><div class='no-result'>सिंक करने पर परफॉरमेंस लोड होगी...</div></div>" +
             "</div>" +
-
             "<script>" +
             "let isAdmin = false;" +
             "const ADMIN_PIN = '9547927698';" +
-
             "function showWelcomePopup() {" +
             "let toast = document.getElementById('welcome-toast');" +
             "toast.classList.add('show');" +
             "setTimeout(() => { toast.classList.remove('show'); }, 2000);" +
             "}" +
-
             "function updateStatus() {" +
             "let total = AndroidNative.getTotalCount();" +
             "document.getElementById('status-text').innerText = '✅ Total Active Orders: ' + total;" +
             "loadPerformance();" +
             "}" +
-
             "function handleAdminClick() {" +
             "if(isAdmin) {" +
             "isAdmin = false;" +
@@ -151,7 +135,6 @@ public class MainActivity extends Activity {
             "box.style.display = box.style.display === 'block' ? 'none' : 'block';" +
             "}" +
             "}" +
-
             "function verifyPin() {" +
             "let inputPin = document.getElementById('pin-input').value.trim();" +
             "if(inputPin === ADMIN_PIN) {" +
@@ -164,7 +147,6 @@ public class MainActivity extends Activity {
             "alert('Admin Mode Activated!');" +
             "} else { alert('Wrong PIN!'); }" +
             "}" +
-
             "function syncGoogleSheet() {" +
             "alert('गूगल शीट से लाइव डाटा सिंक हो रहा है...');" +
             "setTimeout(() => {" +
@@ -178,7 +160,6 @@ public class MainActivity extends Activity {
             "}" +
             "}, 100);" +
             "}" +
-
             "function loadPerformance() {" +
             "let json = AndroidNative.getPerformanceJson();" +
             "let list = document.getElementById('perf-list');" +
@@ -203,7 +184,6 @@ public class MainActivity extends Activity {
             "list.innerHTML += card;" +
             "});" +
             "}" +
-
             "function bulkImport() {" +
             "let rawText = document.getElementById('bulk-input').value.trim();" +
             "if(!rawText) { alert('पेस्ट बॉक्स खाली है!'); return; }" +
@@ -225,25 +205,21 @@ public class MainActivity extends Activity {
             "updateStatus();" +
             "searchOrders();" +
             "}" +
-
             "function clearAllOrders() {" +
             "AndroidNative.deleteAll();" +
             "updateStatus();" +
             "searchOrders();" +
             "alert('सारा डेटा डिलीट हो गया है!');" +
             "}" +
-
             "function deleteSingle(id) {" +
             "AndroidNative.deleteOrder(id);" +
             "updateStatus();" +
             "searchOrders();" +
             "}" +
-
             "function copyToClipboard(text) {" +
             "navigator.clipboard.writeText(text);" +
             "alert('Order ID Copied: ' + text);" +
             "}" +
-
             "function searchOrders() {" +
             "const list = document.getElementById('orders-list');" +
             "const search = document.getElementById('search-input').value.trim();" +
@@ -264,7 +240,6 @@ public class MainActivity extends Activity {
             "list.appendChild(div);" +
             "});" +
             "}" +
-
             "updateStatus();" +
             "showWelcomePopup();" +
             "</script></body></html>";
@@ -288,89 +263,89 @@ public class MainActivity extends Activity {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
                 db.beginTransaction();
-                
-                // Clear old performance and unique sync table
-                db.delete("orders", null, null);
-                db.delete("agent_performance", null, null);
+                try {
+                    db.delete("orders", null, null);
+                    db.delete("agent_performance", null, null);
 
-                HashSet<String> seenTrackingIds = new HashSet<>();
-                LinkedHashMap<String, PerformanceData> agentMap = new LinkedHashMap<>();
+                    HashSet<String> seenTrackingIds = new HashSet<>();
+                    LinkedHashMap<String, PerformanceData> agentMap = new LinkedHashMap<>();
 
-                String line;
-                boolean isHeader = true;
+                    String line;
+                    boolean isHeader = true;
 
-                while ((line = reader.readLine()) != null) {
-                    if (isHeader) {
-                        isHeader = false;
-                        continue;
-                    }
-
-                    String[] parts = line.split(",", -1);
-                    if (parts.length >= 2) {
-                        String trackingId = parts[0].replace("\"", "").trim();
-                        String orderId = parts[1].replace("\"", "").trim();
-
-                        if (trackingId.isEmpty() || seenTrackingIds.contains(trackingId)) {
+                    while ((line = reader.readLine()) != null) {
+                        if (isHeader) {
+                            isHeader = false;
                             continue;
                         }
-                        seenTrackingIds.add(trackingId);
 
-                        if (!trackingId.toUpperCase().contains("TRACKING") && !orderId.isEmpty()) {
-                            ContentValues cv = new ContentValues();
-                            cv.put("tracking_id", trackingId);
-                            cv.put("order_id", orderId);
-                            db.insert("orders", null, cv);
-                            count++;
-                        }
+                        String[] parts = line.split(",", -1);
+                        if (parts.length >= 2) {
+                            String trackingId = parts[0].replace("\"", "").trim();
+                            String orderId = parts[1].replace("\"", "").trim();
 
-                        // Parse agent performance columns C to H
-                        String name = (parts.length > 2) ? parts[2].replace("\"", "").trim() : "";
-                        String mobile = (parts.length > 3) ? parts[3].replace("\"", "").trim() : "";
-
-                        if (!name.isEmpty()) {
-                            int ofd = (parts.length > 4 && !parts[4].trim().isEmpty()) ? parseSafeInt(parts[4]) : 0;
-                            int del = (parts.length > 5 && !parts[5].trim().isEmpty()) ? parseSafeInt(parts[5]) : 0;
-                            int ofp = (parts.length > 6 && !parts[6].trim().isEmpty()) ? parseSafeInt(parts[6]) : 0;
-                            int ofpComp = (parts.length > 7 && !parts[7].trim().isEmpty()) ? parseSafeInt(parts[7]) : 0;
-
-                            String key = name + "_" + mobile;
-                            PerformanceData pData = agentMap.get(key);
-                            if (pData == null) {
-                                pData = new PerformanceData(name, mobile);
-                                agentMap.put(key, pData);
+                            if (trackingId.isEmpty() || seenTrackingIds.contains(trackingId)) {
+                                continue;
                             }
-                            pData.ofd += ofd;
-                            pData.delivered += del;
-                            pData.ofp += ofp;
-                            pData.ofpComp += ofpComp;
+                            seenTrackingIds.add(trackingId);
+
+                            if (!trackingId.toUpperCase().contains("TRACKING") && !orderId.isEmpty()) {
+                                ContentValues cv = new ContentValues();
+                                cv.put("tracking_id", trackingId);
+                                cv.put("order_id", orderId);
+                                db.insert("orders", null, cv);
+                                count++;
+                            }
+
+                            String name = (parts.length > 2) ? parts[2].replace("\"", "").trim() : "";
+                            String mobile = (parts.length > 3) ? parts[3].replace("\"", "").trim() : "";
+
+                            if (!name.isEmpty()) {
+                                int ofd = (parts.length > 4 && !parts[4].trim().isEmpty()) ? parseSafeInt(parts[4]) : 0;
+                                int del = (parts.length > 5 && !parts[5].trim().isEmpty()) ? parseSafeInt(parts[5]) : 0;
+                                int ofp = (parts.length > 6 && !parts[6].trim().isEmpty()) ? parseSafeInt(parts[6]) : 0;
+                                int ofpComp = (parts.length > 7 && !parts[7].trim().isEmpty()) ? parseSafeInt(parts[7]) : 0;
+
+                                String key = name + "_" + mobile;
+                                PerformanceData pData = agentMap.get(key);
+                                if (pData == null) {
+                                    pData = new PerformanceData(name, mobile);
+                                    agentMap.put(key, pData);
+                                }
+                                pData.ofd += ofd;
+                                pData.delivered += del;
+                                pData.ofp += ofp;
+                                pData.ofpComp += ofpComp;
+                            }
                         }
                     }
-                }
 
-                // Save aggregated agent performance into database
-                for (PerformanceData p : agentMap.values()) {
-                    ContentValues pCv = new ContentValues();
-                    pCv.put("name", p.name);
-                    pCv.put("mobile", p.mobile);
-                    pCv.put("ofd", p.ofd);
-                    pCv.put("delivered", p.delivered);
-                    pCv.put("ofp", p.ofp);
-                    pCv.put("ofp_comp", p.ofpComp);
-                    pCv.put("total_attempts", (p.ofd + p.ofp));
-                    pCv.put("total_complete", (p.delivered + p.ofpComp));
-                    
-                    int totalAttempts = p.ofd + p.ofp;
-                    int totalComplete = p.delivered + p.ofpComp;
-                    String rate = "0%";
-                    if (totalAttempts > 0) {
-                        double r = ((double) totalComplete / totalAttempts) * 100.0;
-                        rate = String.format(Locale.US, "%.1f%%", r);
+                    for (PerformanceData p : agentMap.values()) {
+                        ContentValues pCv = new ContentValues();
+                        pCv.put("name", p.name);
+                        pCv.put("mobile", p.mobile);
+                        pCv.put("ofd", p.ofd);
+                        pCv.put("delivered", p.delivered);
+                        pCv.put("ofp", p.ofp);
+                        pCv.put("ofp_comp", p.ofpComp);
+                        pCv.put("total_attempts", (p.ofd + p.ofp));
+                        pCv.put("total_complete", (p.delivered + p.ofpComp));
+                        
+                        int totalAttempts = p.ofd + p.ofp;
+                        int totalComplete = p.delivered + p.ofpComp;
+                        String rate = "0%";
+                        if (totalAttempts > 0) {
+                            double r = ((double) totalComplete / totalAttempts) * 100.0;
+                            rate = String.format(Locale.US, "%.1f%%", r);
+                        }
+                        pCv.put("conversion_rate", rate);
+
+                        db.insert("agent_performance", null, pCv);
                     }
-                    pCv.put("conversion_rate", rate);
 
-                    db.insert("agent_performance", null, pCv);
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
                 }
-
-                db.setTransactionSuccessful();
-                db.endTransaction();
-    
+                reader.close();
+          
