@@ -253,6 +253,8 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public int syncFromSheet() {
             int count = 0;
+            SQLiteDatabase db = null;
+            BufferedReader reader = null;
             try {
                 URL url = new URL(GOOGLE_SHEET_CSV_URL);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -260,92 +262,100 @@ public class MainActivity extends Activity {
                 conn.setInstanceFollowRedirects(true);
                 conn.setConnectTimeout(15000);
                 
-                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                db = dbHelper.getWritableDatabase();
                 db.beginTransaction();
-                try {
-                    db.delete("orders", null, null);
-                    db.delete("agent_performance", null, null);
 
-                    HashSet<String> seenTrackingIds = new HashSet<>();
-                    LinkedHashMap<String, PerformanceData> agentMap = new LinkedHashMap<>();
+                db.delete("orders", null, null);
+                db.delete("agent_performance", null, null);
 
-                    String line;
-                    boolean isHeader = true;
+                HashSet<String> seenTrackingIds = new HashSet<>();
+                LinkedHashMap<String, PerformanceData> agentMap = new LinkedHashMap<>();
 
-                    while ((line = reader.readLine()) != null) {
-                        if (isHeader) {
-                            isHeader = false;
+                String line;
+                boolean isHeader = true;
+
+                while ((line = reader.readLine()) != null) {
+                    if (isHeader) {
+                        isHeader = false;
+                        continue;
+                    }
+
+                    String[] parts = line.split(",", -1);
+                    if (parts.length >= 2) {
+                        String trackingId = parts[0].replace("\"", "").trim();
+                        String orderId = parts[1].replace("\"", "").trim();
+
+                        if (trackingId.isEmpty() || seenTrackingIds.contains(trackingId)) {
                             continue;
                         }
+                        seenTrackingIds.add(trackingId);
 
-                        String[] parts = line.split(",", -1);
-                        if (parts.length >= 2) {
-                            String trackingId = parts[0].replace("\"", "").trim();
-                            String orderId = parts[1].replace("\"", "").trim();
+                        if (!trackingId.toUpperCase().contains("TRACKING") && !orderId.isEmpty()) {
+                            ContentValues cv = new ContentValues();
+                            cv.put("tracking_id", trackingId);
+                            cv.put("order_id", orderId);
+                            db.insert("orders", null, cv);
+                            count++;
+                        }
 
-                            if (trackingId.isEmpty() || seenTrackingIds.contains(trackingId)) {
-                                continue;
+                        String name = (parts.length > 2) ? parts[2].replace("\"", "").trim() : "";
+                        String mobile = (parts.length > 3) ? parts[3].replace("\"", "").trim() : "";
+
+                        if (!name.isEmpty()) {
+                            int ofd = (parts.length > 4 && !parts[4].trim().isEmpty()) ? parseSafeInt(parts[4]) : 0;
+                            int del = (parts.length > 5 && !parts[5].trim().isEmpty()) ? parseSafeInt(parts[5]) : 0;
+                            int ofp = (parts.length > 6 && !parts[6].trim().isEmpty()) ? parseSafeInt(parts[6]) : 0;
+                            int ofpComp = (parts.length > 7 && !parts[7].trim().isEmpty()) ? parseSafeInt(parts[7]) : 0;
+
+                            String key = name + "_" + mobile;
+                            PerformanceData pData = agentMap.get(key);
+                            if (pData == null) {
+                                pData = new PerformanceData(name, mobile);
+                                agentMap.put(key, pData);
                             }
-                            seenTrackingIds.add(trackingId);
-
-                            if (!trackingId.toUpperCase().contains("TRACKING") && !orderId.isEmpty()) {
-                                ContentValues cv = new ContentValues();
-                                cv.put("tracking_id", trackingId);
-                                cv.put("order_id", orderId);
-                                db.insert("orders", null, cv);
-                                count++;
-                            }
-
-                            String name = (parts.length > 2) ? parts[2].replace("\"", "").trim() : "";
-                            String mobile = (parts.length > 3) ? parts[3].replace("\"", "").trim() : "";
-
-                            if (!name.isEmpty()) {
-                                int ofd = (parts.length > 4 && !parts[4].trim().isEmpty()) ? parseSafeInt(parts[4]) : 0;
-                                int del = (parts.length > 5 && !parts[5].trim().isEmpty()) ? parseSafeInt(parts[5]) : 0;
-                                int ofp = (parts.length > 6 && !parts[6].trim().isEmpty()) ? parseSafeInt(parts[6]) : 0;
-                                int ofpComp = (parts.length > 7 && !parts[7].trim().isEmpty()) ? parseSafeInt(parts[7]) : 0;
-
-                                String key = name + "_" + mobile;
-                                PerformanceData pData = agentMap.get(key);
-                                if (pData == null) {
-                                    pData = new PerformanceData(name, mobile);
-                                    agentMap.put(key, pData);
-                                }
-                                pData.ofd += ofd;
-                                pData.delivered += del;
-                                pData.ofp += ofp;
-                                pData.ofpComp += ofpComp;
-                            }
+                            pData.ofd += ofd;
+                            pData.delivered += del;
+                            pData.ofp += ofp;
+                            pData.ofpComp += ofpComp;
                         }
                     }
+                }
 
-                    for (PerformanceData p : agentMap.values()) {
-                        ContentValues pCv = new ContentValues();
-                        pCv.put("name", p.name);
-                        pCv.put("mobile", p.mobile);
-                        pCv.put("ofd", p.ofd);
-                        pCv.put("delivered", p.delivered);
-                        pCv.put("ofp", p.ofp);
-                        pCv.put("ofp_comp", p.ofpComp);
-                        pCv.put("total_attempts", (p.ofd + p.ofp));
-                        pCv.put("total_complete", (p.delivered + p.ofpComp));
-                        
-                        int totalAttempts = p.ofd + p.ofp;
-                        int totalComplete = p.delivered + p.ofpComp;
-                        String rate = "0%";
-                        if (totalAttempts > 0) {
-                            double r = ((double) totalComplete / totalAttempts) * 100.0;
-                            rate = String.format(Locale.US, "%.1f%%", r);
-                        }
-                        pCv.put("conversion_rate", rate);
-
-                        db.insert("agent_performance", null, pCv);
+                for (PerformanceData p : agentMap.values()) {
+                    ContentValues pCv = new ContentValues();
+                    pCv.put("name", p.name);
+                    pCv.put("mobile", p.mobile);
+                    pCv.put("ofd", p.ofd);
+                    pCv.put("delivered", p.delivered);
+                    pCv.put("ofp", p.ofp);
+                    pCv.put("ofp_comp", p.ofpComp);
+                    
+                    int totalAttempts = p.ofd + p.ofp;
+                    int totalComplete = p.delivered + p.ofpComp;
+                    pCv.put("total_attempts", totalAttempts);
+                    pCv.put("total_complete", totalComplete);
+                    
+                    String rate = "0%";
+                    if (totalAttempts > 0) {
+                        double r = ((double) totalComplete / totalAttempts) * 100.0;
+                        rate = String.format(Locale.US, "%.1f%%", r);
                     }
+                    pCv.put("conversion_rate", rate);
 
-                    db.setTransactionSuccessful();
-                } finally {
+                    db.insert("agent_performance", null, pCv);
+                }
+
+                db.setTransactionSuccessful();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return -1;
+            } finally {
+                if (db != null) {
                     db.endTransaction();
                 }
-                reader.close();
-          
+                if (reader != null) {
+                    try { reader.close(); } catch (Exception ignored) {}
+                }
+            }
+     
